@@ -8,8 +8,7 @@ Tests:
 3. Himalayan / Western Ghats Cloudburst Detection
 4. Official IMD Tropical Cyclone Classification & Storm Surge
 5. Wet-Bulb 35°C Human Survivability & 'Loo' Wind Heatwave Engine
-6. Dual-Polarization Polarimetric Radar Hydrometeor Classification
-7. Master MausamEngine Unified Facade
+6. Master MausamEngine Unified Facade
 =============================================================================
 """
 
@@ -17,7 +16,6 @@ import math
 import numpy as np
 from severe import downdraft_cape, significant_tornado_parameter, hail_diagnostics, sweat_index
 from hazards import detect_cloudburst, classify_cyclone, evaluate_kalbaisakhi, evaluate_heat_stress
-from radar import classify_hydrometeor, vad_wind_profile
 from engine import MausamEngine
 
 
@@ -79,20 +77,6 @@ def test_regional_hazards():
     print("[PASS] Human Physiological Heat Stress Engine Succeeded.")
 
 
-def test_radar_engine():
-    # 1. Giant Hail Echo: Zh = 65 dBZ, Zdr = 0.2 dB, Rho_hv = 0.88
-    hail_report = classify_hydrometeor(zh_dbz=65.0, zdr_db=0.2, rho_hv=0.88)
-    print(f"Radar Classification: {hail_report.classification} (Confidence: {hail_report.confidence*100:.0f}%)")
-    assert hail_report.is_hail is True
-    assert "HAIL" in hail_report.classification
-    
-    # 2. Biological Swarm (Locusts / Birds): Zh = 22 dBZ, Zdr = 3.5 dB, Rho_hv = 0.75
-    bio_report = classify_hydrometeor(zh_dbz=22.0, zdr_db=3.5, rho_hv=0.75)
-    print(f"Radar Classification: {bio_report.classification}")
-    assert "BIOLOGICAL" in bio_report.classification
-    print("[PASS] Doppler Dual-Pol Hydrometeor Engine Succeeded.")
-
-
 def test_master_mausam_engine():
     engine = MausamEngine()
     
@@ -123,6 +107,5 @@ def test_master_mausam_engine():
 if __name__ == "__main__":
     test_severe_convective_engine()
     test_regional_hazards()
-    test_radar_engine()
     test_master_mausam_engine()
     print("\n[SUCCESS] ALL ADVANCED SPECIFIC ATMOSPHERIC SUITES PASSED 100%!")

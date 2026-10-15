@@ -421,10 +421,10 @@ def launch_gui():
         output_txt.insert(tk.END, f"  • Recommended Urea  : {res['agro']['urea_45kg_bags']} bags (Saves ₹4,500/acre)\n")
         output_txt.insert(tk.END, f"  • Tubewell Runtime  : {res['pump']['formatted_runtime']} ({res['pump']['net_water_liters']:,} Liters)\n\n")
 
-        output_txt.insert(tk.END, "🚨 NDMA DISASTER PROTOCOL & SIREN:\n")
+        output_txt.insert(tk.END, "🚨 SEVERE WEATHER PROTOCOL & ADVISORY:\n")
         output_txt.insert(tk.END, f"  • Alert Level       : {res['threat'].alert_level}\n")
         output_txt.insert(tk.END, f"  • Hazard Summary    : {res['threat'].hazard_summary}\n")
-        output_txt.insert(tk.END, f"  • 800Hz Siren Status: {res['threat'].siren_protocol.get('play_sound')} -> {res['threat'].siren_protocol.get('tone')}\n")
+        output_txt.insert(tk.END, f"  • Protocol Status   : {res['threat'].alert_protocol.get('status', 'ACTIVE')}\n")
         output_txt.insert(tk.END, f"  • Advisory          : {res['threat'].recommended_action}\n")
         output_txt.insert(tk.END, "=" * 70 + "\n")
 

@@ -5,7 +5,7 @@
 Solves:
 1. Convective Available Potential Energy (CAPE) Lightning & Hail Hazard Index
 2. Hydrological Rational Runoff: Q = (C * I * A) / 360 (m³/s)
-3. 800Hz Acoustic Distress Siren Activation Protocols & NDMA CAP Standards
+3. Severe Weather Warning Protocols & NDMA CAP Standards
 =============================================================================
 """
 
@@ -20,7 +20,7 @@ class ThreatEvaluationResult:
         alert_level: str,
         hazard_summary: str,
         is_extreme: bool,
-        siren_protocol: Dict[str, Any],
+        alert_protocol: Dict[str, Any],
         flood_runoff_discharge_m3s: float,
         waterlogging_risk: str,
         shelter_dispatch_needed: bool,
@@ -29,20 +29,28 @@ class ThreatEvaluationResult:
         self.alert_level = alert_level
         self.hazard_summary = hazard_summary
         self.is_extreme = is_extreme
-        self.siren_protocol = siren_protocol
+        self.alert_protocol = alert_protocol
         self.flood_runoff_discharge_m3s = flood_runoff_discharge_m3s
         self.waterlogging_risk = waterlogging_risk
         self.shelter_dispatch_needed = shelter_dispatch_needed
         self.recommended_action = recommended_action
+
+    @property
+    def siren_protocol(self) -> Dict[str, Any]:
+        """Backward-compatible alias for alert_protocol."""
+        return self.alert_protocol
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "alert_level": self.alert_level,
             "hazard_summary": self.hazard_summary,
             "is_extreme": self.is_extreme,
-            "siren_protocol": self.siren_protocol,
+            "alert_protocol": self.alert_protocol,
             "flood_runoff_discharge_m3s": round(self.flood_runoff_discharge_m3s, 2),
             "waterlogging_risk": self.waterlogging_risk,
+            "shelter_dispatch_needed": self.shelter_dispatch_needed,
+            "recommended_action": self.recommended_action,
+        }
             "shelter_dispatch_needed": self.shelter_dispatch_needed,
             "recommended_action": self.recommended_action,
         }
@@ -133,37 +141,31 @@ class ThreatSolver:
             is_extreme = True
             action = "IMMEDIATE EVACUATION / MOVE TO SAFE HIGH GROUND: Severe convective thunderstorm and flash flood danger active."
             summary = f"RED ALERT: Extreme Rainfall ({rain_intensity_mm_hr} mm/hr), Lightning CAPE {cape_index:.0f} J/kg, Wind {wind_speed_kmh} km/h."
-            siren_state = "ARMED"
-            siren_db = 115.0
+            alert_state = "ACTIVE"
         elif is_orange:
             level = "ORANGE"
             is_extreme = False
             action = "BE PREPARED: Charge emergency lights, stay away from low-lying drains, avoid open fields during thunderstorm."
             summary = f"ORANGE ALERT: Heavy Precipitation ({rain_intensity_mm_hr} mm/hr), Wind Gusts {wind_speed_kmh} km/h."
-            siren_state = "ARMED"
-            siren_db = 95.0
+            alert_state = "ACTIVE"
         elif rain_intensity_mm_hr > 0.0 or wind_speed_kmh >= 22.0:
             level = "YELLOW"
             is_extreme = False
-            action = "WEATHER ADVISORY: Carry umbrella, stay updated with Doppler radar nowcasts."
+            action = "WEATHER ADVISORY: Carry umbrella, stay updated with official meteorological bulletins."
             summary = f"YELLOW ADVISORY: Active precipitation ({rain_intensity_mm_hr} mm/hr)."
-            siren_state = "STANDBY"
-            siren_db = 0.0
+            alert_state = "STANDBY"
         else:
             level = "GREEN"
             is_extreme = False
             action = "Normal meteorological conditions. Routine outdoor activities safe."
             summary = "GREEN: Normal conditions."
-            siren_state = "STANDBY"
-            siren_db = 0.0
+            alert_state = "STANDBY"
 
-        siren_protocol = {
-            "status": siren_state,
-            "carrier_frequency_hz": 800.0,
-            "modulation": "SAWTOOTH_800_1200_HZ",
-            "pattern": "Wail (3s ON, 2s OFF for 3 cycles)",
-            "sound_pressure_level_db": siren_db,
+        alert_protocol = {
+            "status": alert_state,
+            "severity": level,
             "cell_broadcast_channel": "CB-4370",
+            "action_directive": action,
             "vibration_ms": [500, 200, 500, 200, 1000] if is_red else []
         }
 
@@ -171,7 +173,7 @@ class ThreatSolver:
             alert_level=level,
             hazard_summary=summary,
             is_extreme=is_extreme,
-            siren_protocol=siren_protocol,
+            alert_protocol=alert_protocol,
             flood_runoff_discharge_m3s=runoff_res["runoff_discharge_m3s"],
             waterlogging_risk=runoff_res["risk_status"],
             shelter_dispatch_needed=is_red or runoff_res["risk_status"] == "CRITICAL_INUNDATION",

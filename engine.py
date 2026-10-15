@@ -4,7 +4,7 @@
 =============================================================================
 Unified Sovereign Meteorological & Hazard Intelligence Engine.
 Connects Thermodynamics, Spherical Kinematics, Native GRIB2 Bitstream,
-WMO Quantization, Doppler Radar, and Regional Early-Warning Intelligence
+WMO Quantization, and Regional Early-Warning Intelligence
 into a single cohesive, high-performance Python API.
 
 MIT License | Copyright (c) 2026 Mr. Mohit Donawat (MSD Innovations)
@@ -47,12 +47,6 @@ from .hazards import (
     KalbaisakhiAlert,
     evaluate_heat_stress,
     HeatwaveHumanStress,
-)
-from .radar import (
-    classify_hydrometeor,
-    HydrometeorReport,
-    vad_wind_profile,
-)
 from .grib import MausamMeshGribDataset
 from .container import (
     MausamMeshQuantizer,
@@ -207,15 +201,6 @@ class MausamEngine:
         shear_0_6km_m_s: float,
     ) -> KalbaisakhiAlert:
         return evaluate_kalbaisakhi(dewpoint_c, rh_700_pct, cape_j_kg, shear_0_6km_m_s)
-
-    def classify_radar_echo(
-        self,
-        zh_dbz: float,
-        zdr_db: float,
-        rho_hv: float,
-        kdp_deg_km: float = 0.0,
-    ) -> HydrometeorReport:
-        return classify_hydrometeor(zh_dbz, zdr_db, rho_hv, kdp_deg_km)
 
     # =========================================================================
     # 3. GRIB2 & .mmesh EDGE FILE UTILITIES

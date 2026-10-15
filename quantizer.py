@@ -38,7 +38,7 @@ class AtmosphericQuantizer:
         "precipitation": {"min": 0.0, "max": 255.0, "step": 1.0},     # 0 to 255 mm/hr
         "wind_speed": {"min": 0.0, "max": 150.0, "step": 0.5},        # 0 to 150 km/h
         "pressure": {"min": 900.0, "max": 1050.0, "step": 0.5},       # 900 to 1050 hPa
-        "reflectivity": {"min": -10.0, "max": 75.0, "step": 0.5},     # -10 to +75 dBZ (Doppler Radar)
+        "reflectivity": {"min": -10.0, "max": 75.0, "step": 0.5},     # -10 to +75 dBZ (Cloud Reflectivity)
     }
 
     @classmethod

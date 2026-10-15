@@ -10,9 +10,9 @@ Features:
 1. Real-Time Operational NOAA GFS Live Weather Tracking for ANY Indian Village
 2. Real-Time Reverse Geocoding (Detects real Village, Town, District, State)
 3. Live Location Search Bar with auto-suggestions across India
-4. Government Weather Grid File Uploader (Parses GRIB2, CSV, JSON, NetCDF & Quantizes by 95%)
+4. Government Weather Grid File Uploader (Parses GRIB2, CSV, JSON, NetCDF & Quantizes to WMO .mmesh format)
 5. NOAA NOMADS Live Atmos Cycle Monitor (Direct link & telemetry to ncep.noaa.gov)
-6. Real NDMA 800Hz Acoustic Siren Synthesizer via Web Audio API
+6. Real-Time Multi-Hazard Early Warning Protocols & Directives
 7. Kisan Agromet Precision Fertilization & Rain-Adjusted Tubewell Runtime
 8. Zero external pip dependencies — Runs locally on ANY laptop via standard Python!
 =============================================================================
@@ -595,7 +595,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
       margin-top: 0.25rem;
     }
 
-    /* NDMA ALERT & SIREN */
+    /* EARLY WARNING DIRECTIVES */
     .alert-box {
       border-radius: 14px;
       padding: 1.25rem;
@@ -610,28 +610,22 @@ HTML_PAGE = r"""<!DOCTYPE html>
     .alert-box.YELLOW { background: rgba(234, 179, 8, 0.15); border-color: rgba(234, 179, 8, 0.5); }
     .alert-box.GREEN { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.5); }
 
-    .btn-siren {
-      background: linear-gradient(135deg, #ef4444, #b91c1c);
-      color: white;
-      border: none;
+    .btn-alert-action {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
       padding: 0.85rem 1.25rem;
       border-radius: 10px;
       font-size: 0.88rem;
-      font-weight: 800;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
       transition: all 0.2s;
-      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
     }
-    .btn-siren:hover { transform: scale(1.02); box-shadow: 0 0 30px rgba(239, 68, 68, 0.7); }
-    .btn-siren.active { animation: pulse-siren 0.6s infinite alternate; }
-    @keyframes pulse-siren {
-      from { background: #ef4444; transform: scale(1); }
-      to { background: #7f1d1d; transform: scale(1.04); }
-    }
+    .btn-alert-action:hover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.15); }
 
     /* KISAN AGROMET */
     .kisan-grid {
@@ -945,10 +939,10 @@ print(verdict.to_json())</pre>
       <!-- DUAL DISASTER & KISAN GRID -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
 
-        <!-- NDMA EARLY WARNING & SIREN CARD -->
+        <!-- EARLY WARNING & HAZARD DIRECTIVES CARD -->
         <div class="card">
           <div class="card-title">
-            <span>🚨 NDMA EARLY WARNING & SIREN</span>
+            <span>🚨 EARLY WARNING & HAZARD DIRECTIVES</span>
             <span style="font-size: 0.7rem; color: var(--crimson); font-family: var(--font-mono);">CAP PROTOCOL</span>
           </div>
           
@@ -963,11 +957,11 @@ print(verdict.to_json())</pre>
           </div>
 
           <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.65rem;">
-            <button class="btn-siren" id="sirenBtn" onclick="toggleEmergencySiren()">
-              <span>🚨 TEST 800Hz NDMA SIREN (ACOUSTIC)</span>
+            <button class="btn-alert-action" id="actionDirectiveBtn" onclick="copyActionDirective()">
+              <span>📋 COPY ACTION DIRECTIVE</span>
             </button>
             <p style="font-size: 0.68rem; color: var(--text-muted); text-align: center; font-family: var(--font-mono);">
-              Synthesizes real acoustic sawtooth distress wave via Web Audio API
+              Automated convective severe weather protocol
             </p>
           </div>
         </div>
@@ -1145,7 +1139,7 @@ print(verdict.to_json())</pre>
       }, 300);
     }
 
-    // Real Reverse Geocoding across all 195+ Countries
+    // Reverse Geocoding via OpenStreetMap Nominatim
     async function reverseGeocode(lat, lon) {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
@@ -1420,48 +1414,20 @@ print(verdict.to_json())</pre>
       }
     });
 
-    // 800Hz NDMA Siren
-    function toggleEmergencySiren() {
-      const btn = document.getElementById("sirenBtn");
-      if (isSirenPlaying) {
-        stopSiren();
-        btn.classList.remove("active");
-        btn.innerHTML = "<span>🚨 TEST 800Hz NDMA SIREN (ACOUSTIC)</span>";
-      } else {
-        startSiren();
-        btn.classList.add("active");
-        btn.innerHTML = "<span>🛑 STOP EMERGENCY SIREN</span>";
-      }
-    }
-
-    function startSiren() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-
-      sirenOsc = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      sirenOsc.type = 'sawtooth';
-      sirenOsc.frequency.setValueAtTime(500, audioCtx.currentTime);
-
-      const now = audioCtx.currentTime;
-      for (let i = 0; i < 30; i++) {
-        sirenOsc.frequency.linearRampToValueAtTime(1000, now + (i * 1.5) + 0.75);
-        sirenOsc.frequency.linearRampToValueAtTime(500, now + (i * 1.5) + 1.5);
-      }
-
-      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      sirenOsc.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      sirenOsc.start();
-      isSirenPlaying = true;
-    }
-
-    function stopSiren() {
-      if (sirenOsc) {
-        try { sirenOsc.stop(); sirenOsc.disconnect(); } catch (e) {}
-        sirenOsc = null;
-      }
-      isSirenPlaying = false;
+    // Action Directive Copy Handler
+    function copyActionDirective() {
+      const btn = document.getElementById("actionDirectiveBtn");
+      const summary = document.getElementById("hazardSummary").innerText;
+      const action = document.getElementById("recommendedAction").innerText;
+      const textToCopy = `[MAUSAMMESH EARLY WARNING DIRECTIVE]\nSummary: ${summary}\nRecommended Action: ${action}`;
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        btn.innerHTML = "<span>✅ DIRECTIVE COPIED!</span>";
+        setTimeout(() => {
+          btn.innerHTML = "<span>📋 COPY ACTION DIRECTIVE</span>";
+        }, 2000);
+      }).catch(() => {
+        alert(textToCopy);
+      });
     }
 
     // Speech alert

@@ -173,11 +173,11 @@ pub fn calculate_rational_runoff(runoff_coeff: f64, rain_intensity_mm_hr: f64, c
     (runoff_coeff * rain_intensity_mm_hr * catchment_area_ha) / 360.0
 }
 
-/// Evaluates atmospheric instability & NDMA Siren triggering
+/// Evaluates atmospheric instability & severe weather warning
 pub struct ThreatResult {
     pub severity: &'static str,
     pub is_extreme: bool,
-    pub siren_protocol: &'static str,
+    pub alert_protocol: &'static str,
     pub peak_runoff_m3s: f64,
 }
 
@@ -200,18 +200,18 @@ pub fn evaluate_instability(
         "GREEN"
     };
 
-    let siren = if is_extreme {
-        "ARM_800HZ_WAIL_EMERGENCY"
+    let alert = if is_extreme {
+        "DIRECTIVE_IMMEDIATE_SHELTER"
     } else if severity == "ORANGE" {
-        "ARM_800HZ_INTERMITTENT_ALERT"
+        "DIRECTIVE_BE_PREPARED"
     } else {
-        "STANDBY_SILENT"
+        "DIRECTIVE_ROUTINE_STANDBY"
     };
 
     ThreatResult {
         severity,
         is_extreme,
-        siren_protocol: siren,
+        alert_protocol: alert,
         peak_runoff_m3s: q,
     }
 }

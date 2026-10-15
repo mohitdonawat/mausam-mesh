@@ -46,8 +46,7 @@ To ensure strict scientific rigor, quantization step sizes ($\Delta$) must never
 | **Horizontal Wind ($u, v$)** | $[-120.0, +120.0]\text{ m/s}$ | $240.0\text{ m/s}$ | $\pm 0.10\text{ m/s}$ | `uint16` | $65,536$ | **$0.00366\text{ m/s}$** | **$27.3\times$ better than WMO** |
 | **Wind Speed ($V_h$)** | $[0.0, 120.0]\text{ m/s}$ | $120.0\text{ m/s}$ | $\pm 0.50\text{ m/s}$ | `uint8` (Overview) | $256$ | **$0.470\text{ m/s}$** | Within WMO Target |
 | **Geopotential Height ($Z$)** | $[0, 35000]\text{ gpm}$ | $35,000\text{ gpm}$ | $\pm 5.0\text{ gpm}$ | `uint16` | $65,536$ | **$0.534\text{ gpm}$** | **$9.3\times$ better than WMO** |
-| **Precipitation Water (PWAT)**| $[0.0, 120.0]\text{ mm}$ | $120.0\text{ mm}$ | $\pm 0.50\text{ mm}$ | `uint16` | $65,536$ | **$0.00183\text{ mm}$** | Ultra-fine flash flood resolution |
-| **Radar Reflectivity ($dBZ$)**| $[-32.0, +95.0]\text{ dBZ}$ | $127.0\text{ dBZ}$ | $\pm 0.50\text{ dBZ}$ | `uint8` | $256$ | **$0.498\text{ dBZ}$** | Matches radar Doppler precision |
+| **Cloud Reflectivity ($dBZ$)**| $[-32.0, +95.0]\text{ dBZ}$ | $127.0\text{ dBZ}$ | $\pm 0.50\text{ dBZ}$ | `uint8` | $256$ | **$0.498\text{ dBZ}$** | Fine precipitation sensitivity |
 | **Convective CAPE** | $[0, 8000]\text{ J/kg}$ | $8,000\text{ J/kg}$ | $\pm 25\text{ J/kg}$ | `uint16` | $65,536$ | **$0.122\text{ J/kg}$** | **$204\times$ better than sounding error** |
 
 > [!IMPORTANT]
@@ -134,7 +133,7 @@ Offset | Type     | Field Name       | Description
 ───────┼──────────┼──────────────────┼────────────────────────────────────────────
 0x00   | char[8]  | magic            | "MMESH\x01\x00\x00" (Identifier & Version)
 0x08   | uint16_t | format_version   | Container specification version (1)
-0x0A   | uint16_t | model_id         | 1=GFS, 2=ECMWF, 3=NCMRWF, 4=IMD, 5=RADAR
+0x0A   | uint16_t | model_id         | 1=GFS, 2=ECMWF, 3=NCMRWF, 4=IMD, 5=STATION_OBS
 0x0C   | uint64_t | run_timestamp    | Epoch seconds of model cycle (UTC)
 0x14   | uint16_t | forecast_hour    | Forecast lead step (e.g., 0, 3, 6, 24)
 0x16   | uint16_t | n_lat            | Latitude grid dimension (e.g., 721 for 0.25°)

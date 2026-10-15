@@ -168,36 +168,44 @@ def main():
         print(f"Pipeline Latency  : {verdict.pipeline_latency_ms} ms")
         return
 
-    # If --tk explicitly requested
-    if args.tk:
-        try:
-            from .test_mausam_mesh_gfs_live import launch_gui
-            print(BANNER)
-            print("🚀 Launching MausamMesh Tkinter Desktop GUI...")
-            launch_gui()
-            return
-        except Exception as e:
-            print(BANNER)
-            print(f"Notice: Tkinter could not be launched ({e}). Falling back to Web Studio.\n")
-
     # If --cli explicitly requested
     if args.cli:
         print(BANNER)
-        from .test_mausam_mesh_gfs_live import run_cli_all
-        run_cli_all()
+        try:
+            from .auto import auto
+        except (ImportError, ValueError):
+            from auto import auto
+        verdict = auto(location=args.location, lat=args.lat, lon=args.lon)
+        print(f"[MAUSAMMESH VERDICT] Location: {verdict.location_tag}")
+        print(f" Calibrated Temp : {verdict.calibrated_temp_c:.2f} °C (Bias: {verdict.learned_bias_delta_c:+0.2f} °C)")
+        print(f" Surface CAPE    : {verdict.sbcape_j_kg:.1f} J/kg | CIN: {verdict.sbcin_j_kg:.1f} J/kg")
+        print(f" 0-6km Wind Shear: {verdict.bulk_shear_0_6km_m_s:.1f} m/s | 0-3km Helicity: {verdict.storm_relative_helicity_0_3km:.1f} m^2/s^2")
+        print(f" Storm Mode      : {verdict.storm_mode}")
+        print(f" Alert Level     : {verdict.alert_level}")
+        print(f" Action Directive: {verdict.actionable_directive}")
+        print(f" Latency         : {verdict.pipeline_latency_ms:.2f} ms | RAM: {verdict.memory_footprint_mb} MB")
         return
 
-    # Default action: Launch the Breathtaking Modern Web Studio!
+    # Default action: Launch the Modern Web Studio or print summary!
     try:
         from .studio import launch_studio
         print(BANNER)
-        print("🚀 Launching MausamMesh Sovereign Meteorological Web Studio...")
+        print("🚀 Launching MausamMesh Meteorological Web Studio...")
         launch_studio(port=args.port, open_browser=True)
     except Exception as e:
         print(BANNER)
-        print(f"Notice: Studio could not be launched directly ({e}). Falling back to CLI mode.\n")
-        from .test_mausam_mesh_gfs_live import run_cli_all
-        run_cli_all()
+        print(f"Notice: Web Studio not available ({e}). Running autonomous CLI engine:\n")
+        try:
+            from .auto import auto
+        except (ImportError, ValueError):
+            from auto import auto
+        verdict = auto(location=args.location, lat=args.lat, lon=args.lon)
+        print(f"[MAUSAMMESH VERDICT] Location: {verdict.location_tag}")
+        print(f" Calibrated Temp : {verdict.calibrated_temp_c:.2f} °C")
+        print(f" Surface CAPE    : {verdict.sbcape_j_kg:.1f} J/kg | Shear: {verdict.bulk_shear_0_6km_m_s:.1f} m/s")
+        print(f" Alert Level     : {verdict.alert_level} ({verdict.storm_mode})")
+        print(f" Action Directive: {verdict.actionable_directive}")
+        return
 
 if __name__ == "__main__":
     main()

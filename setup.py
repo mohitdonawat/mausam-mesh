@@ -35,7 +35,7 @@ setup(
         "Topic :: Scientific/Engineering :: Atmospheric Science",
         "Topic :: Scientific/Engineering :: Hydrology",
     ],
-    keywords="meteorology weather grib2 gis edge-computing quantization early-warning siren bhashini",
+    keywords="meteorology weather grib2 gis edge-computing quantization early-warning bhashini wildus",
     python_requires=">=3.8",
     entry_points={
         "console_scripts": [

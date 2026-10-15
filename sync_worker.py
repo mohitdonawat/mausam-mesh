@@ -46,7 +46,7 @@ ATMOS_VARIABLES = [
     {"name": "rain_rate", "unit": "mm/hr", "min": 0.0, "max": 200.0},
     {"name": "wind_speed_10m", "unit": "km/h", "min": 0.0, "max": 140.0},
     {"name": "pressure_sfc", "unit": "hPa", "min": 920.0, "max": 1045.0},
-    {"name": "radar_reflectivity", "unit": "dBZ", "min": -10.0, "max": 75.0},
+    {"name": "reflectivity_dbz", "unit": "dBZ", "min": -10.0, "max": 75.0},
 ]
 
 HEADER_MAGIC = b"MMESH3H1"
@@ -169,7 +169,7 @@ class MeshSyncWorker:
                     val = 15.0 + math.sin(lat * 0.3) * 6.0 + (step_hour * 1.2) % 18.0
                 elif var_idx == 3:  # Surface Pressure
                     val = 1012.0 - (lat - 10.0) * 0.25 - math.sin(lon * 0.1) * 2.0
-                else:  # Radar Reflectivity (dBZ)
+                else:  # Atmospheric Reflectivity (dBZ)
                     rain_approx = max(0.0, math.sin((step_hour + r * 0.1) * 0.6) * 18.0)
                     val = 15.0 + (rain_approx * 1.8) if rain_approx > 1.0 else 0.0
 
@@ -426,7 +426,7 @@ def main():
             print(f"⚡ Slicing Latency: {res['slicing_latency_us']} microseconds (O(1) mmap)")
             print("=" * 60)
             for step in res["timeline"]:
-                print(f"Hour {step['forecast_hour']:<5} | Temp: {step['temperature_2m']}°C | Rain: {step['rain_rate']} mm/h | Wind: {step['wind_speed_10m']} km/h | Press: {step['pressure_sfc']} hPa | Radar: {step['radar_reflectivity']} dBZ")
+                print(f"Hour {step['forecast_hour']:<5} | Temp: {step['temperature_2m']}°C | Rain: {step['rain_rate']} mm/h | Wind: {step['wind_speed_10m']} km/h | Press: {step['pressure_sfc']} hPa | Refl: {step.get('reflectivity_dbz', 0.0)} dBZ")
             print("=" * 60)
         except Exception as e:
             print(f"Error querying location: {e}")

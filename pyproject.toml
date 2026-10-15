@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = [
     "meteorology", "weather", "grib2", "gis", "disaster-management",
-    "edge-computing", "quantization", "early-warning", "bhashini", "siren", "wildus"
+    "edge-computing", "quantization", "early-warning", "bhashini", "wildus"
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",

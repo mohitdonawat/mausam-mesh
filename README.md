@@ -1,5 +1,5 @@
 # ⚡ MausamMesh (मौसम मेश)
-### Planetary Sovereign Meteorological Compression, Kinematic Slicing & Autonomous Early-Warning Engine
+### Edge Meteorological Computing, Numerical Atmospheric Kinematics & Early-Warning Engine
 
 [![PyPI Version](https://img.shields.io/badge/pypi-v1.0.3-blue.svg)](https://pypi.org/project/mausam-mesh/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
@@ -7,17 +7,17 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Edge%20%7C%20Docker-purple.svg)]()
 [![WMO Compliant](https://img.shields.io/badge/WMO-No.%208%20Compliant-orange.svg)]()
 [![Zero C-Dependencies](https://img.shields.io/badge/dependencies-Zero%20C%20Libs-success.svg)]()
-[![Scope](https://img.shields.io/badge/coverage-Global%20Planetary%20Grid-cyan.svg)]()
+[![Standard](https://img.shields.io/badge/standard-NOAA%20GFS%20%26%20WMO-blue.svg)]()
 
 ---
 
-## 🌍 The Sovereign Architectural Mission
+## 🌍 Overview & Architecture
 
-**`MausamMesh`** is a sovereign, planetary-scale meteorological computing engine and disaster early-warning system engineered single-handedly from first principles. It delivers **sub-millisecond spatial weather slicing, WMO-bounded tensor quantization, and severe convective hazard verdicts** directly to developers, cloud microservices, disaster command centers, and edge IoT devices — with **strictly zero external C-dependencies** (no `eccodes`, no `libnetcdf`, no `gdal`).
+**`MausamMesh`** is a lightweight, pure-Python meteorological computing engine and atmospheric early-warning framework engineered from first principles. It delivers **sub-millisecond spatial weather slicing, WMO-bounded tensor quantization, and convective hazard evaluation** directly to developers, edge microservices, and disaster analysis tools — with **strictly zero external C-dependencies** (no `eccodes`, no `libnetcdf`, no `gdal`).
 
 ### 🎯 Key Architectural Pillars
-1. **Dual-Mode Sovereignty**: Operates seamlessly in **Headless Zero-GUI mode** (`mm.auto()`, Docker daemon, cron jobs, Go microservices) and in an **Interactive Visual Web Studio** (`mausam-mesh --gui`).
-2. **Zero Geographic Bias (Global Coverage)**: Full planetary coordinate ingestion ($-90^\circ$ to $+90^\circ$ Lat, $-180^\circ$ to $+180^\circ$ Lon) across all 195+ nations, with universal geocoding for Tokyo, New York, London, Paris, Sydney, Dubai, Cairo, São Paulo, Delhi, and remote rural hamlets alike.
+1. **Dual-Mode Architecture**: Operates seamlessly in **Headless Zero-GUI mode** (`mm.auto()`, Docker daemon, cron jobs, microservices) and in an **Interactive Visual Web Studio** (`mausam-mesh --gui`).
+2. **Coordinate & Grid Ingestion**: Standard geographic coordinate support (Latitude / Longitude) and local grid parsing, with built-in geocoding support for major cities and custom coordinates.
 3. **Rigorous Physical Meteorology**: Zero hardcoded dummy metrics. All convective parameters (SBCAPE, CIN, 0–6km Bulk Shear, Bunkers Storm Motion, 0–3km SRH, Supercell Composite, Stull Wet-Bulb) are calculated through real numerical integration of vertical atmospheric profiles from operational NOAA GFS runs.
 4. **Recursive Bayesian Online Adaptive Learning**: Incorporates local ground station observations in real time using recursive Kalman-style bias estimation, self-correcting systematic numerical weather prediction (NWP) model biases without requiring expensive global model re-training.
 5. **WMO-No. 8 Compliant Tensor Quantization**: Compact `.mmesh` containers using 16-bit and 8-bit integer quantization bounded strictly by World Meteorological Organization sensor error thresholds ($\pm 0.05^\circ\text{C}$), achieving a practical **50%–70% payload reduction** over raw IEEE 754 32-bit floats.
@@ -38,20 +38,19 @@ print(verdict.to_json())
 
 ### Flexible Calling Paradigms:
 ```python
-# 1. By Global City / Megacity Name (Sub-millisecond offline gazetteer + online OSM fallback)
-verdict = mm.auto("Tokyo")
-verdict = mm.auto("London")
-verdict = mm.auto("New York")
-verdict = mm.auto("Dubai")
+# 1. By Location Name or District
+verdict = mm.auto("Delhi")
+verdict = mm.auto("Jaipur")
+verdict = mm.auto("Sheopur")
 
 # 2. By Geographic Coordinates
-verdict = mm.auto(lat=35.6762, lon=139.6503)
+verdict = mm.auto(lat=28.6139, lon=77.2090)
 
 # 3. From Local Raw GRIB2 File
-verdict = mm.auto(grib_file="gfs_operational.grib2", lat=51.5074, lon=-0.1278)
+verdict = mm.auto(grib_file="gfs_operational.grib2", lat=26.9124, lon=75.7873)
 
 # 4. With Real Ground Station Observation (Recursive Bayesian Adaptive Learning)
-verdict = mm.auto("Tokyo", observed_temp_c=21.4)
+verdict = mm.auto("Delhi", observed_temp_c=31.4)
 print(f"Learned Local Bias: {verdict.learned_bias_delta_c:+0.2f} °C")
 ```
 
@@ -122,29 +121,29 @@ Reduces atmospheric transmission payloads across satellite, radio, and cellular 
 ### Module 05: Autonomous Engine, Online Adaptive Learning & Microservices (`auto.py`)
 * **Recursive Bayesian Bias Estimator**: Corrects systematic local topography and urban heat island biases recursively against ground observations:
   $$\text{Bias}_t = (1 - \alpha) \cdot \text{Bias}_{t-1} + \alpha \cdot (T_{\text{observed}} - T_{\text{modeled}})$$
-* **Global Convective Scanner (`mm.auto_scan()`)**: Monitors convective instability hotspots across all continents (Tokyo, London, New York, São Paulo, Sydney, Cairo, Dubai, Singapore, Delhi) and ranks them dynamically by convective severity.
-* **Zero-Dependency HTTP Microservice (`mm.serve()`)**: Provides instant JSON REST endpoints (`/auto`, `/scan`, `/health`) for Docker containers, Kubernetes pods, and Go backend clusters.
+* **Regional Convective Scanner (`mm.auto_scan()`)**: Evaluates atmospheric instability parameters across monitored sectors and ranks them dynamically by convective severity.
+* **Zero-Dependency HTTP Microservice (`mm.serve()`)**: Provides instant JSON REST endpoints (`/auto`, `/scan`, `/health`) for Docker containers, Kubernetes pods, and backend clusters.
 
 ---
 
 ## 🖥️ Interactive Web Studio & Visual HUD
 
-In addition to headless automation, MausamMesh includes an interactive, high-tech **Planetary Meteorological Studio**:
+In addition to headless automation, MausamMesh includes an interactive **Meteorological Web Studio**:
 
 ```bash
-# Launch Modern Web Studio in your browser (Port 8989)
+# Launch Web Studio in your browser (Port 8989)
 mausam-mesh --gui
 ```
 
 ### Visual Capabilities:
-1. **Interactive Global Leaflet Map**: Click any village, town, or ocean coordinate worldwide to slice real-time NOAA GFS operational weather.
-2. **Universal Location Search**: Search any city or country across all 195+ nations (e.g. *Tokyo, London, New York, Paris, Dubai, Sydney, Sheopur*).
+1. **Interactive Leaflet Map**: Click any point or coordinate to slice real-time NOAA GFS operational weather.
+2. **Location Search**: Search by city, district, village, or coordinates (e.g. *Delhi, Jaipur, Sheopur, Bhopal, Indore*).
 3. **Convective Thermodynamics & 3D Kinematics HUD**: Live gauges for SBCAPE, CIN, LCL Base, Wet-Bulb $T_w$, 0–6km Bulk Shear, 0–3km Helicity (SRH), and Supercell Composite (SCP).
 4. **Bayesian Adaptive Calibration Panel**: Enter ground-truth station thermometer readings and watch the recursive Kalman-style engine calibrate bias live.
-5. **Government Grid File Uploader**: Drag and drop any GRIB2, NetCDF, CSV, or JSON file to quantize it into a compact `.mmesh` container in real time.
+5. **Grid File Uploader**: Drag and drop any GRIB2, NetCDF, CSV, or JSON file to quantize it into a compact `.mmesh` container in real time.
 6. **Early Warning Directives**: Real-time convective hazard classification (Green, Yellow, Orange, Red) with actionable safety protocols.
 7. **Precision Agromet & Irrigation Optimizer**: Calculates exact NPK-to-bag conversions (DAP, Urea, MOP) and FAO-56 Penman-Monteith crop evapotranspiration.
-8. **Multilingual Spoken Advisories**: Spoken mother-tongue audio alerts across **10 languages** (English, Spanish, French, Arabic, Chinese, Japanese, Hindi, Bengali, Telugu, Tamil).
+8. **Multilingual Voice Advisories**: Audio weather alerts aligned with regional languages.
 
 ---
 
@@ -174,12 +173,12 @@ mausam-mesh --auto
 # 📋 2. Headless JSON Output (For Docker, cron jobs, microservices)
 mausam-mesh --auto --json
 
-# 📍 3. Query any Global City / Country
-mausam-mesh -l "Tokyo"
-mausam-mesh -l "New York" --json
-mausam-mesh -l "London"
+# 📍 3. Query Location by Name or District
+mausam-mesh -l "Delhi"
+mausam-mesh -l "Jaipur" --json
+mausam-mesh -l "Sheopur"
 
-# 🌐 4. Run Planetary Convective Multi-Region Risk Scan
+# 🌐 4. Run Convective Multi-Region Risk Scan
 mausam-mesh --scan
 mausam-mesh --scan --json
 
@@ -205,7 +204,7 @@ mausam-mesh --about
 import mausam_mesh as mm
 
 # Autonomous run with ground calibration
-verdict = mm.auto("Tokyo", observed_temp_c=21.2)
+verdict = mm.auto("Delhi", observed_temp_c=31.2)
 
 print(f"Location       : {verdict.location_tag}")
 print(f"Calibrated Temp: {verdict.calibrated_temp_c:.2f} °C (Bias: {verdict.learned_bias_delta_c:+.2f} °C)")
@@ -217,12 +216,12 @@ print(f"Alert Level    : {verdict.alert_level}")
 print(f"Directive      : {verdict.actionable_directive}")
 ```
 
-### 2. Planetary Multi-Region Convective Scan
+### 2. Multi-Sector Convective Scan
 ```python
 import mausam_mesh as mm
 
-# Scans active storm corridors across all continents
-verdicts = mm.auto_scan(scope="global")
+# Scans monitored weather sectors
+verdicts = mm.auto_scan()
 
 for v in verdicts:
     print(f"[{v.alert_level:12s}] {v.location_tag:35s} | CAPE: {v.sbcape_j_kg:6.1f} J/kg | Shear: {v.bulk_shear_0_6km_m_s:4.1f} m/s")
@@ -298,8 +297,8 @@ Non-technical users should never have to grapple with terminal commands, drive l
    - User Desktop (`~/Desktop`), Downloads (`~/Downloads`), and Documents (`~/Documents`)
 2. **Interactive Web Studio Drag & Drop**:
    - In the Visual Web Studio, users can simply drag and drop files from Windows Explorer right onto the web browser from ANY drive or folder.
-3. **100% Dynamic Global Geocoding**:
-   - Zero hardcoded cities. The engine accepts freeform village names, city names, tehsils, districts, postal codes, or raw coordinates (`25.66, 76.70`, `25°40'N 76°42'E`) across all 195+ countries worldwide.
+3. **Dynamic Geocoding & Coordinate Parser**:
+   - The engine accepts freeform village names, city names, tehsils, districts, postal codes, or raw coordinates (`25.66, 76.70`, `25°40'N 76°42'E`).
 
 ---
 
@@ -310,10 +309,10 @@ Non-technical users should never have to grapple with terminal commands, drive l
 | **Founder & Systems Architect** | **Mr. Mohit Donawat** |
 | **Corporate Leadership** | Founder, CEO & Lead Systems Architect — **WildUs** ([wildus.app](https://wildus.app)) & **MSD Innovations** |
 | **Official Portfolio** | [mohitdonawat.wildus.app](https://mohitdonawat.wildus.app/) |
-| **Flagship Social Universe** | **WildUs App** ([wildus.app](https://wildus.app)) — Privacy-first cosmic social discovery featuring low-latency WebRTC telephony, 72-Hour Candidate Verification, server-authoritative Go microservices, and AI conversational matchmaking across 175+ countries. |
-| **Spatial Engine Innovation** | **YansMap** ([yansmap.web.app](https://yansmap.web.app/)) — Ultra-fast custom interactive map engine built with zero third-party API dependencies. |
+| **Flagship Social Universe** | **WildUs App** ([wildus.app](https://wildus.app)) — Privacy-first social discovery featuring low-latency WebRTC telephony, Candidate Verification, server-authoritative Go microservices, and AI conversational matchmaking. |
+| **Spatial Engine Innovation** | **YansMap** ([yansmap.web.app](https://yansmap.web.app/)) — Fast interactive custom map engine built with zero third-party API dependencies. |
 | **Campus OS & EdTech** | **Mohit University** ([mohituniversity.web.app](https://mohituniversity.web.app/)) — Autonomous AI-driven digital academic operating system. |
-| **Meteorological Core** | **MausamMesh** — Sovereign WMO-bounded atmospheric quantization & high-performance point slicing engine. |
+| **Meteorological Core** | **MausamMesh** — Pure-Python WMO-bounded atmospheric quantization & numerical point slicing engine. |
 | **Hometown** | Sheopur, Madhya Pradesh, India |
 | **Direct Contact** | [mohitdonawat24@gmail.com](mailto:mohitdonawat24@gmail.com) |
 | **GitHub** | [github.com/mohitdonawat](https://github.com/mohitdonawat) |
