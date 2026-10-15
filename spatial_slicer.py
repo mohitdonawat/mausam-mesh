@@ -131,13 +131,13 @@ class SpatialSlicer:
         cls,
         lat: float,
         lon: float,
-        lat_bounds: Tuple[float, float] = (8.0, 37.0),
-        lon_bounds: Tuple[float, float] = (68.0, 97.0),
+        lat_bounds: Tuple[float, float] = (-90.0, 90.0),
+        lon_bounds: Tuple[float, float] = (-180.0, 180.0),
         sample_grid: Optional[List[List[float]]] = None,
-        nearest_city: str = "India Hub"
+        nearest_city: str = "Planetary Grid Hub"
     ) -> PointWeather:
         """
-        Extracts a single village coordinate from the national meteorological grid.
+        Extracts a single planetary coordinate from the meteorological grid (Global -90 to +90, -180 to +180).
         Returns a PointWeather instance.
         """
         lat_min, lat_max = lat_bounds

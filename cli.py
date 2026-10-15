@@ -63,13 +63,20 @@ def main():
     parser = argparse.ArgumentParser(
         description="MausamMesh — Sovereign Edge Meteorological Compression & Spatial Slicing Engine"
     )
+    parser.add_argument("--auto", action="store_true", help="Execute the one-line autonomous adaptive pipeline (zero GUI)")
+    parser.add_argument("--json", action="store_true", help="Output results in pure headless JSON format (for microservices/Docker)")
+    parser.add_argument("--observe-temp", type=float, help="Feed real ground station observation for online adaptive bias learning")
+    parser.add_argument("--scan", action="store_true", help="Autonomous multi-region convective risk scan (zero GUI)")
+    parser.add_argument("--serve", action="store_true", help="Launch headless zero-dependency HTTP microservice server")
+    parser.add_argument("--daemon", action="store_true", help="Run autonomous headless 3-hourly ingestion daemon")
     parser.add_argument("--studio", "--gui", dest="studio", action="store_true", help="Launch the high-tech Modern Web Studio in your browser")
     parser.add_argument("--tk", action="store_true", help="Launch the legacy Tkinter desktop window")
     parser.add_argument("--cli", action="store_true", help="Run the All-India multi-location extraction benchmark")
     parser.add_argument("--about", action="store_true", help="Display author credentials and project architecture info")
-    parser.add_argument("--lat", type=float, help="Latitude for instant weather slice")
-    parser.add_argument("--lon", type=float, help="Longitude for instant weather slice")
-    parser.add_argument("--port", type=int, default=8989, help="Port to run Web Studio server on (default: 8989)")
+    parser.add_argument("--location", "-l", type=str, default=None, help="City / District name or coordinates (e.g. 'Indore', 'Jaipur', '22.72, 75.83')")
+    parser.add_argument("--lat", type=float, default=None, help="Optional Latitude (auto-detected via IP/environment if omitted)")
+    parser.add_argument("--lon", type=float, default=None, help="Optional Longitude (auto-detected via IP/environment if omitted)")
+    parser.add_argument("--port", type=int, default=8989, help="Port to run Web Studio or Microservice server on")
     
     args = parser.parse_args()
 
@@ -77,20 +84,88 @@ def main():
         print_about()
         return
 
-    # If lat/lon passed
+    # Headless Zero-Dependency HTTP Microservice Server
+    if args.serve:
+        try:
+            from .auto import serve
+        except (ImportError, ValueError):
+            from auto import serve
+        micro_port = args.port if args.port != 8989 else 8080
+        serve(port=micro_port)
+        return
+
+    # Headless Multi-Point Regional Grid Scan
+    if args.scan:
+        import json
+        try:
+            from .auto import auto_scan
+        except (ImportError, ValueError):
+            from auto import auto_scan
+        verdicts = auto_scan(
+            location=args.location,
+            lat=args.lat,
+            lon=args.lon,
+        )
+        if args.json:
+            print(json.dumps([v.to_dict() for v in verdicts], indent=2))
+        else:
+            print("================================================================================")
+            print("⚡ MAUSAMMESH AUTONOMOUS REGIONAL RISK MATRIX (ZERO-GUI)")
+            print("================================================================================")
+            for v in verdicts:
+                print(f"[{v.alert_level:16s}] {v.location_tag:32s} | CAPE: {v.sbcape_j_kg:6.1f} J/kg | Shear: {v.bulk_shear_0_6km_m_s:4.1f} m/s | Mode: {v.storm_mode}")
+        return
+
+    # Headless Continuous Daemon Mode
+    if args.daemon:
+        try:
+            from .sync_worker import MeshSyncWorker
+        except (ImportError, ValueError):
+            from sync_worker import MeshSyncWorker
+        print("[MausamMesh] Starting Headless 3-Hourly Ingestion Daemon...")
+        worker = MeshSyncWorker()
+        worker.run_daemon(interval_seconds=10800)
+        return
+
+    # Headless One-Line Autonomous Pipeline (Zero-input auto-detection or Custom Location)
+    if args.auto or args.json or args.observe_temp is not None or args.location is not None:
+        try:
+            from .auto import auto
+        except (ImportError, ValueError):
+            from auto import auto
+        verdict = auto(
+            location=args.location,
+            lat=args.lat,
+            lon=args.lon,
+            observed_temp_c=args.observe_temp
+        )
+        if args.json:
+            print(verdict.to_json())
+        else:
+            print(f"[MAUSAMMESH AUTONOMOUS VERDICT] Location: {verdict.location_tag} (Lat: {verdict.latitude:.4f} N, Lon: {verdict.longitude:.4f} E)")
+            print(f" Calibrated Temp : {verdict.calibrated_temp_c:.2f} C (Learned Bias: {verdict.learned_bias_delta_c:+0.2f} C)")
+            print(f" Surface CAPE    : {verdict.sbcape_j_kg:.1f} J/kg | CIN: {verdict.sbcin_j_kg:.1f} J/kg")
+            print(f" 0-6km Wind Shear: {verdict.bulk_shear_0_6km_m_s:.1f} m/s | 0-3km Helicity: {verdict.storm_relative_helicity_0_3km:.1f} m^2/s^2")
+            print(f" Storm Mode      : {verdict.storm_mode}")
+            print(f" Alert Level     : {verdict.alert_level}")
+            print(f" Action Directive: {verdict.actionable_directive}")
+            print(f" Latency         : {verdict.pipeline_latency_ms:.2f} ms | RAM: {verdict.memory_footprint_mb} MB")
+        return
+
+    # If lat/lon passed without --json
     if args.lat is not None and args.lon is not None:
-        print(BANNER)
-        from .spatial_slicer import slice_point
-        from .threat_solver import evaluate_threat
-        
-        pt = slice_point(lat=args.lat, lon=args.lon)
-        threat = evaluate_threat(rain_intensity_mm_hr=pt.rain_mm_hr, temp_c=pt.temperature_c)
-        print(f"📍 Query Coordinates : Lat {args.lat}° N, Lon {args.lon}° E")
-        print(f"🌡️ Temperature       : {pt.temperature_c} °C")
-        print(f"🌧️ Rain Rate         : {pt.rain_mm_hr} mm/hr")
-        print(f"💨 Wind Speed        : {pt.wind_kmh} km/h")
-        print(f"🚨 Hazard Alert      : {threat.alert_level} ({threat.hazard_summary})")
-        print(f"📢 Siren Protocol    : {threat.siren_protocol.get('tone', 'NORMAL')}")
+        try:
+            from .auto import auto
+        except (ImportError, ValueError):
+            from auto import auto
+        verdict = auto(lat=args.lat, lon=args.lon, observed_temp_c=args.observe_temp)
+        print(f"Query Coordinates : Lat {args.lat} N, Lon {args.lon} E")
+        print(f"Calibrated Temp   : {verdict.calibrated_temp_c} C (Bias: {verdict.learned_bias_delta_c:+0.2f} C)")
+        print(f"Relative Humidity : {verdict.relative_humidity_pct} % | Wet-Bulb: {verdict.wet_bulb_temp_c} C")
+        print(f"Surface CAPE      : {verdict.sbcape_j_kg} J/kg | Shear: {verdict.bulk_shear_0_6km_m_s} m/s")
+        print(f"Hazard Alert      : {verdict.alert_level} ({verdict.storm_mode})")
+        print(f"Action Directive  : {verdict.actionable_directive}")
+        print(f"Pipeline Latency  : {verdict.pipeline_latency_ms} ms")
         return
 
     # If --tk explicitly requested

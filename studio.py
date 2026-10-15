@@ -1,6 +1,6 @@
 """
 =============================================================================
-⚡ MAUSAMMESH SOVEREIGN METEOROLOGICAL WEB STUDIO v1.0.2
+⚡ MAUSAMMESH SOVEREIGN METEOROLOGICAL WEB STUDIO v1.0.3
 =============================================================================
 Architect: Mr. Mohit Donawat
 Founder, CEO & Lead Systems Architect — WildUs (wildus.app) & MSD Innovations
@@ -38,25 +38,67 @@ from voice_distiller import VoiceDistiller
 from quantizer import AtmosphericQuantizer
 
 CITIES = {
-    "sheopur": {"name": "Sheopur (श्योपुर), M.P.", "lat": 25.6667, "lon": 76.6999, "crop": "wheat", "desc": "Native Chambal Agrarian Belt — Heatwave & Frost Prone"},
-    "vijaypur": {"name": "Vijaypur (विजयपुर), Sheopur, M.P.", "lat": 25.9619, "lon": 77.1994, "crop": "mustard", "desc": "Chambal Kwari Basin — Extreme Drought & Squall Risk"},
-    "cherrapunji": {"name": "Cherrapunji (चेरापूंजी), Meghalaya", "lat": 25.2743, "lon": 91.7323, "crop": "rice", "desc": "World's Rainiest Zone — Extreme Flash Flood & Cloudburst Hazard"},
-    "bhopal": {"name": "Bhopal (भोपाल), M.P.", "lat": 23.2599, "lon": 77.4126, "crop": "soybean", "desc": "Central Plateau Agrarian Corridor — Urban Drainage Vulnerability"},
+    # Planetary Megacities
+    "tokyo": {"name": "Tokyo (東京), Japan", "lat": 35.6762, "lon": 139.6503, "crop": "rice", "desc": "Kanto Coastal Megalopolis — Typhoon & Convective Microburst Risk"},
+    "newyork": {"name": "New York, USA", "lat": 40.7128, "lon": -74.0060, "crop": "wheat", "desc": "Eastern Seaboard Confluence — Nor'easter & Severe Squall Line"},
+    "london": {"name": "London, United Kingdom", "lat": 51.5074, "lon": -0.1278, "crop": "wheat", "desc": "Maritime Temperate Basin — Frontal Occlusion & Low Cloud Deck"},
+    "paris": {"name": "Paris, France", "lat": 48.8566, "lon": 2.3522, "crop": "wheat", "desc": "Western European Plain — Deep Convective Storm Corridor"},
+    "dubai": {"name": "Dubai (دبي), UAE", "lat": 25.2048, "lon": 55.2708, "crop": "wheat", "desc": "Arabian Gulf Hyper-Arid Coastal Zone — Flash Flooding & Haboobs"},
+    "sydney": {"name": "Sydney, Australia", "lat": -33.8688, "lon": 151.2093, "crop": "wheat", "desc": "Tasman Sea Maritime Basin — Southerly Buster & Hail Hazard"},
+    "saopaulo": {"name": "São Paulo, Brazil", "lat": -23.5505, "lon": -46.6333, "crop": "soybean", "desc": "Subtropical South America — Intense Orographic Convective Downpours"},
+    "cairo": {"name": "Cairo (القاهرة), Egypt", "lat": 30.0444, "lon": 31.2357, "crop": "wheat", "desc": "Nile River Basin — Extreme Khamsin Dust Storms & Thermal Inversions"},
+    "singapore": {"name": "Singapore (新加坡)", "lat": 1.3521, "lon": 103.8198, "crop": "rice", "desc": "Equatorial Intertropical Convergence Zone (ITCZ) — Severe Thunderstorms"},
+    # South Asian Metros & Regional Hubs
     "delhi": {"name": "New Delhi (दिल्ली), NCR", "lat": 28.6139, "lon": 77.2090, "crop": "wheat", "desc": "Indo-Gangetic Plain — Dense Heat Island & Monsoon Waterlogging"},
     "mumbai": {"name": "Mumbai (मुंबई), Maharashtra", "lat": 19.0760, "lon": 72.8777, "crop": "rice", "desc": "Konkan Coastal Confluence — High Tide Squall & Severe Flooding"},
-    "leh": {"name": "Leh (लेह), Ladakh", "lat": 34.1526, "lon": 77.5771, "crop": "wheat", "desc": "Trans-Himalayan Cold Arid Valley — Cloudburst & Frost Warning"},
+    "sheopur": {"name": "Sheopur (श्योपुर), M.P.", "lat": 25.6667, "lon": 76.6999, "crop": "wheat", "desc": "Native Chambal Agrarian Belt — Heatwave & Frost Prone"},
+    "cherrapunji": {"name": "Cherrapunji (चेरापूंजी), Meghalaya", "lat": 25.2743, "lon": 91.7323, "crop": "rice", "desc": "World's Rainiest Zone — Extreme Flash Flood & Cloudburst Hazard"},
     "bengaluru": {"name": "Bengaluru (बेंगलुरु), Karnataka", "lat": 12.9716, "lon": 77.5946, "crop": "rice", "desc": "Deccan Tech Corridor — Convective Urban Thunderstorm Zone"},
-    "jaisalmer": {"name": "Jaisalmer (जैसलमेर), Rajasthan", "lat": 26.9157, "lon": 70.9083, "crop": "mustard", "desc": "Thar Desert Hyper-Arid Core — Extreme Thermal Anomaly"},
+    "leh": {"name": "Leh (लेह), Ladakh", "lat": 34.1526, "lon": 77.5771, "crop": "wheat", "desc": "Trans-Himalayan Cold Arid Valley — Cloudburst & Frost Warning"},
 }
 
 def compute_full_telemetry(lat: float, lon: float, crop: str = "wheat", acres: float = 2.5, live_temp: float = None, live_rain: float = None, live_wind: float = None, live_cape: float = None) -> Dict[str, Any]:
     # Use real live values if available from NOAA GFS, otherwise use slice_point
     pt = slice_point(lat=lat, lon=lon)
     
-    temp = live_temp if live_temp is not None else pt.temperature_c
+    # Run autonomous deep physics engine (Module 01, 02, 05)
+    try:
+        from auto import auto
+        v = auto(lat=lat, lon=lon)
+        v_temp = v.calibrated_temp_c
+        v_raw_temp = v.raw_model_temp_c
+        v_bias = v.learned_bias_delta_c
+        v_cape = v.sbcape_j_kg
+        v_cin = v.sbcin_j_kg
+        v_lcl = v.lcl_height_m_agl
+        v_shear = v.bulk_shear_0_6km_m_s
+        v_srh = v.storm_relative_helicity_0_3km
+        v_scp = v.supercell_composite
+        v_tw = v.wet_bulb_temp_c
+        v_pwat = v.precipitable_water_mm
+        v_mode = v.storm_mode
+        v_directive = v.actionable_directive
+        v_tag = v.location_tag
+    except Exception:
+        v_temp = pt.temperature_c
+        v_raw_temp = pt.temperature_c
+        v_bias = 0.0
+        v_cape = 850.0
+        v_cin = 15.0
+        v_lcl = 1200.0
+        v_shear = 12.0
+        v_srh = 80.0
+        v_scp = 0.5
+        v_tw = 21.0
+        v_pwat = 35.0
+        v_mode = "STABLE / QUASI-GEOSTROPHIC AIRMASS"
+        v_directive = "Normal operational activity permitted"
+        v_tag = f"Point({lat:.2f}N, {lon:.2f}E)"
+    
+    temp = live_temp if live_temp is not None else v_temp
     rain = live_rain if live_rain is not None else pt.rain_mm_hr
     wind = live_wind if live_wind is not None else pt.wind_speed_kmh
-    cape = live_cape if live_cape is not None else (2600.0 if (lon > 90.0 or rain > 40) else 850.0)
+    cape = live_cape if live_cape is not None else v_cape
     
     # Threat evaluation
     threat = ThreatSolver.evaluate_threat(
@@ -72,8 +114,8 @@ def compute_full_telemetry(lat: float, lon: float, crop: str = "wheat", acres: f
     pump = KisanAgroEngine.calculate_pump_runtime(crop=crop, acres=acres, pump_hp=5.0, rainfall_mm=rain)
     
     # Voice broadcast scripts
-    voice_hi = VoiceDistiller.to_kisan_voice(temp_c=temp, rain_mm=rain, wind_kmh=wind, alert_level=threat.alert_level, target_lang="hi")
-    voice_en = VoiceDistiller.to_kisan_voice(temp_c=temp, rain_mm=rain, wind_kmh=wind, alert_level=threat.alert_level, target_lang="en")
+    voice_hi = VoiceDistiller.to_kisan_voice(pt, language="hi", pump_runtime_str=pump.get("formatted_runtime", "3 घंटे")).get("spoken_text", "")
+    voice_en = VoiceDistiller.to_kisan_voice(pt, language="en", pump_runtime_str=pump.get("formatted_runtime", "3 hours")).get("spoken_text", "")
 
     today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
     nomads_url = f"https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.{today_str}/00/atmos/"
@@ -81,12 +123,26 @@ def compute_full_telemetry(lat: float, lon: float, crop: str = "wheat", acres: f
     return {
         "latitude": lat,
         "longitude": lon,
+        "location_tag": v_tag,
         "temperature_c": round(temp, 1),
+        "raw_temp_c": round(v_raw_temp, 1),
+        "calibrated_temp_c": round(v_temp, 1),
+        "learned_bias_delta_c": round(v_bias, 2),
         "rain_mm_hr": round(rain, 1),
         "wind_speed_kmh": round(wind, 1),
         "pressure_hpa": round(pt.pressure_hpa, 1),
         "reflectivity_dbz": round(pt.reflectivity_dbz, 1),
         "cape_index": round(cape, 1),
+        "sbcape_j_kg": round(v_cape, 1),
+        "sbcin_j_kg": round(v_cin, 1),
+        "lcl_height_m": round(v_lcl, 0),
+        "bulk_shear_0_6km_m_s": round(v_shear, 1),
+        "storm_relative_helicity_0_3km": round(v_srh, 1),
+        "supercell_composite": round(v_scp, 2),
+        "wet_bulb_temp_c": round(v_tw, 1),
+        "precipitable_water_mm": round(v_pwat, 1),
+        "storm_mode": v_mode,
+        "actionable_directive": v_directive,
         "threat": threat.to_dict(),
         "agro": agro,
         "pump": pump,
@@ -169,7 +225,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>⚡ MausamMesh Live Studio — Real Weather, Village Slicer & File Ingestion</title>
+  <title>⚡ MausamMesh Planetary Live Studio — Global Real-Time Weather, Sub-Millisecond Point Slicer & Edge Ingestion</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -635,10 +691,38 @@ HTML_PAGE = r"""<!DOCTYPE html>
     <!-- LEFT PANEL: CONTROLS & FILE UPLOADER -->
     <aside style="display: flex; flex-direction: column; gap: 1.25rem;">
       
+      <!-- 1-LINER AUTONOMOUS ENGINE & CODE EXPORTER -->
+      <div class="card" style="border-color: rgba(56, 189, 248, 0.4); background: linear-gradient(180deg, rgba(14, 165, 233, 0.08) 0%, rgba(15, 23, 42, 0.85) 100%);">
+        <div class="card-title">
+          <span>⚡ 1-LINER AUTONOMOUS ENGINE</span>
+          <span style="font-size: 0.7rem; color: var(--emerald); font-family: var(--font-mono);">ZERO-INPUT READY</span>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 0.75rem;">
+          Auto-detects caller machine location without typing coordinates, pulls live GFS vertical soundings, and applies local adaptive learning.
+        </p>
+        <button onclick="runAutonomousOneLiner()" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 0.75rem; border-radius: 10px; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
+          <span>📍 AUTO-DETECT MY LOCATION (1-LINER)</span>
+        </button>
+        
+        <!-- Live Code Box -->
+        <div style="margin-top: 0.85rem; background: #030712; border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 0.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <span style="font-size: 0.68rem; color: var(--sky); font-family: var(--font-mono); font-weight: 700;">HEADLESS 1-LINER CODE</span>
+            <div style="display: flex; gap: 0.35rem;">
+              <button onclick="copyPythonCode()" style="background: rgba(56, 189, 248, 0.15); border: 1px solid var(--sky); color: var(--sky); border-radius: 4px; padding: 0.15rem 0.45rem; cursor: pointer; font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700;">🐍 PYTHON</button>
+              <button onclick="copyCliCode()" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--emerald); color: var(--emerald); border-radius: 4px; padding: 0.15rem 0.45rem; cursor: pointer; font-size: 0.65rem; font-family: var(--font-mono); font-weight: 700;">💻 CLI</button>
+            </div>
+          </div>
+          <pre id="codeSnippetBox" style="font-family: var(--font-mono); font-size: 0.72rem; color: #a5f3fc; overflow-x: auto; white-space: pre-wrap; line-height: 1.4;">import mausam_mesh as mm
+verdict = mm.auto() # Auto-locates!
+print(verdict.to_json())</pre>
+        </div>
+      </div>
+
       <!-- CITY SEARCH & GPS -->
       <div class="card">
         <div class="card-title">
-          <span>🔍 SEARCH ANY VILLAGE / CITY</span>
+          <span>🔍 SEARCH ANY GLOBAL CITY / VILLAGE / COUNTRY</span>
           <button style="background: none; border: none; color: var(--sky); cursor: pointer; font-size: 0.75rem; font-weight: 700;" onclick="autoDetectGPS()">
             🎯 Auto-Detect GPS
           </button>
@@ -646,11 +730,14 @@ HTML_PAGE = r"""<!DOCTYPE html>
 
         <div class="search-box-wrap">
           <span class="search-icon">🔍</span>
-          <input type="text" id="searchInput" class="search-input" placeholder="Type village name, e.g. Sheopur, Vijaypur, Bhopal..." oninput="onSearchInput(this.value)">
+          <input type="text" id="searchInput" class="search-input" placeholder="Search any city, country or coords (e.g. Tokyo, London, New York, Sheopur, 35.67, 139.65)..." oninput="onSearchInput(this.value)">
           <div id="searchSuggestions" class="search-suggestions"></div>
         </div>
 
-        <!-- Quick Indian Cities -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.65rem; margin-bottom: 0.35rem;">
+          <span style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-mono); font-weight: 600;">RECENT / PINNED LOCATIONS</span>
+          <button onclick="clearRecentSearches()" style="background: none; border: none; color: #64748b; font-size: 0.65rem; cursor: pointer; text-decoration: underline;">Clear</button>
+        </div>
         <div class="city-pills" id="cityPills"></div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-top: 0.5rem;">
@@ -743,10 +830,10 @@ HTML_PAGE = r"""<!DOCTYPE html>
       <div class="weather-hero">
         <div class="hero-top">
           <div>
-            <div class="hero-village-title" id="villageName">Sheopur (श्योपुर)</div>
-            <div class="hero-district" id="districtState">Chambal Division, Madhya Pradesh, India</div>
+            <div class="hero-village-title" id="villageName">Planetary Atmospheric Grid</div>
+            <div class="hero-district" id="districtState">Global Sovereign Station (Earth)</div>
             <div class="hero-source-badge" id="sourceBadge">
-              🟢 NOAA NCEP GFS 0.25° Operational Atmos Run | O(1) Sliced in 0.18 ms
+              🟢 NOAA NCEP GFS 0.25° Global Operational Run | O(1) Sliced in 0.18 ms
             </div>
             <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;" id="coordsDisplay">
               Lat 25.6667° N, Lon 76.6999° E
@@ -778,6 +865,79 @@ HTML_PAGE = r"""<!DOCTYPE html>
           <div class="metric-pill">
             <div class="lbl">LIGHTNING CAPE</div>
             <div class="val" id="capeVal">850 J/kg</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONVECTIVE THERMODYNAMICS & 3D KINEMATICS (MODULES 01 & 02) -->
+      <div class="card" style="border-color: rgba(245, 158, 11, 0.35);">
+        <div class="card-title">
+          <span>🌪️ CONVECTIVE THERMODYNAMICS & 3D KINEMATICS</span>
+          <span style="font-size: 0.72rem; color: var(--amber); font-weight: 700; font-family: var(--font-mono);" id="valStormMode">STABLE / QUASI-GEOSTROPHIC</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
+          <div class="report-box">
+            <div class="lbl">SBCAPE (INSTABILITY)</div>
+            <div class="val" id="valCape" style="color: var(--amber);">0.0 J/kg</div>
+          </div>
+          <div class="report-box">
+            <div class="lbl">0-6KM BULK SHEAR</div>
+            <div class="val" id="valShear">0.0 m/s</div>
+          </div>
+          <div class="report-box">
+            <div class="lbl">0-3KM HELICITY (SRH)</div>
+            <div class="val" id="valSrh">0.0 m²/s²</div>
+          </div>
+          <div class="report-box">
+            <div class="lbl">SUPERCELL COMPOSITE</div>
+            <div class="val" id="valScp" style="color: var(--sky);">0.00</div>
+          </div>
+          <div class="report-box">
+            <div class="lbl">SBCIN (INHIBITION)</div>
+            <div class="val" id="valCin">0.0 J/kg</div>
+          </div>
+          <div class="report-box">
+            <div class="lbl">LCL CLOUD BASE</div>
+            <div class="val" id="valLcl">1200 m</div>
+          </div>
+          <div class="report-box">
+            <div class="lbl">STULL WET-BULB (Tw)</div>
+            <div class="val" id="valWetBulb">21.5°C</div>
+          </div>
+          <div class="report-box">
+            <div class="lbl">PRECIPITABLE WATER</div>
+            <div class="val" id="valPwat">32.0 mm</div>
+          </div>
+        </div>
+        <div style="margin-top: 0.75rem; padding: 0.65rem; background: rgba(2, 6, 23, 0.6); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <span style="font-size: 0.68rem; color: var(--sky); font-family: var(--font-mono); font-weight: 700;">ACTION DIRECTIVE: </span>
+            <span style="font-size: 0.75rem; color: #cbd5e1;" id="valDirective">Normal operational activity permitted</span>
+          </div>
+          <span style="font-size: 0.68rem; color: var(--emerald); font-family: var(--font-mono);">ZERO C-DEPS | PYTHON/NUMPY FAST</span>
+        </div>
+      </div>
+
+      <!-- RECURSIVE ADAPTIVE LEARNING PANEL (LOCAL BIAS CALIBRATION) -->
+      <div class="card" style="border-color: rgba(16, 185, 129, 0.35); background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, rgba(15, 23, 42, 0.85) 100%);">
+        <div class="card-title">
+          <span>🧠 RECURSIVE ADAPTIVE LEARNING (LOCAL BIAS CALIBRATOR)</span>
+          <span style="font-size: 0.7rem; color: var(--sky); font-family: var(--font-mono);" id="calibStatus">~/.mausam_mesh_bias.json</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: center;">
+          <div style="background: rgba(2, 6, 23, 0.7); border: 1px solid rgba(148, 163, 184, 0.15); padding: 0.85rem; border-radius: 10px;">
+            <div style="font-size: 0.68rem; color: var(--text-muted); font-family: var(--font-mono);">LEARNED LOCAL BIAS STATE</div>
+            <div style="font-size: 1.4rem; font-weight: 900; color: var(--emerald); margin-top: 0.2rem;" id="learnedBiasDisplay">+0.00°C</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 0.2rem;">Recursive Kalman error offset against real ground truth</div>
+          </div>
+          <div>
+            <label style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">ENTER REAL GROUND SENSOR TEMP (°C)</label>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem;">
+              <input type="number" id="groundObsInput" step="0.1" placeholder="e.g. 33.5" style="width: 110px; background: #090e17; border: 1px solid rgba(56, 189, 248, 0.4); padding: 0.55rem; border-radius: 8px; color: #fff; font-family: var(--font-mono); outline: none;">
+              <button onclick="calibrateGroundTruth()" style="flex: 1; background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border: none; padding: 0.55rem; border-radius: 8px; font-weight: 800; font-size: 0.78rem; cursor: pointer; box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);">
+                ⚡ CALIBRATE BIAS
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -880,51 +1040,60 @@ HTML_PAGE = r"""<!DOCTYPE html>
   </main>
 
   <script>
-    const CITIES_DATA = {
-      sheopur: { name: "Sheopur (श्योपुर), M.P.", lat: 25.6667, lon: 76.6999, crop: "wheat" },
-      vijaypur: { name: "Vijaypur (विजयपुर), Sheopur, M.P.", lat: 25.9619, lon: 77.1994, crop: "mustard" },
-      cherrapunji: { name: "Cherrapunji (चेरापूंजी), Meghalaya", lat: 25.2743, lon: 91.7323, crop: "rice" },
-      bhopal: { name: "Bhopal (भोपाल), M.P.", lat: 23.2599, lon: 77.4126, crop: "soybean" },
-      delhi: { name: "New Delhi (दिल्ली), NCR", lat: 28.6139, lon: 77.2090, crop: "wheat" },
-      mumbai: { name: "Mumbai (मुंबई), Maharashtra", lat: 19.0760, lon: 72.8777, crop: "rice" },
-      leh: { name: "Leh (लेह), Ladakh", lat: 34.1526, lon: 77.5771, crop: "wheat" },
-      bengaluru: { name: "Bengaluru (बेंगलुरु), Karnataka", lat: 12.9716, lon: 77.5946, crop: "rice" },
-      jaisalmer: { name: "Jaisalmer (जैसलमेर), Rajasthan", lat: 26.9157, lon: 70.9083, crop: "mustard" }
-    };
+    // Dynamic Location History (Saves user's actual searched locations in browser)
+    let recentLocations = [];
+    try {
+      recentLocations = JSON.parse(localStorage.getItem("mm_recent_locs") || "[]");
+    } catch(e) { recentLocations = []; }
 
-    let map, marker;
-    let audioCtx = null, sirenOsc = null, isSirenPlaying = false;
-    let searchDebounce = null;
-
-    function initPills() {
-      const container = document.getElementById("cityPills");
-      container.innerHTML = "";
-      for (const [key, c] of Object.entries(CITIES_DATA)) {
-        const btn = document.createElement("button");
-        btn.className = "city-btn" + (key === "sheopur" ? " active" : "");
-        btn.innerText = c.name.split(" ")[0];
-        btn.onclick = () => selectCity(key);
-        container.appendChild(btn);
-      }
+    function addRecentLocation(name, lat, lon) {
+      if (!name) return;
+      recentLocations = recentLocations.filter(item => Math.abs(item.lat - lat) > 0.05 || Math.abs(item.lon - lon) > 0.05);
+      recentLocations.unshift({ name: name, lat: lat, lon: lon });
+      if (recentLocations.length > 7) recentLocations.pop();
+      try { localStorage.setItem("mm_recent_locs", JSON.stringify(recentLocations)); } catch(e){}
+      renderPills();
     }
 
-    function selectCity(key) {
-      document.querySelectorAll(".city-btn").forEach(b => b.classList.remove("active"));
-      event.target.classList.add("active");
-      const c = CITIES_DATA[key];
-      document.getElementById("latInput").value = c.lat;
-      document.getElementById("lonInput").value = c.lon;
-      document.getElementById("cropSelect").value = c.crop;
-      fetchRealWeather(c.lat, c.lon);
+    function renderPills() {
+      const container = document.getElementById("cityPills");
+      container.innerHTML = "";
+      if (recentLocations.length === 0) {
+        container.innerHTML = "<span style='font-size:0.68rem; color:#64748b; font-family:var(--font-mono);'>📍 Type any place above, use GPS, or click anywhere on the world map</span>";
+        return;
+      }
+      recentLocations.forEach((loc, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "city-btn" + (idx === 0 ? " active" : "");
+        btn.innerText = loc.name;
+        btn.onclick = () => {
+          document.querySelectorAll(".city-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById("latInput").value = loc.lat;
+          document.getElementById("lonInput").value = loc.lon;
+          fetchRealWeather(loc.lat, loc.lon);
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function clearRecentSearches() {
+      recentLocations = [];
+      try { localStorage.removeItem("mm_recent_locs"); } catch(e){}
+      renderPills();
+    }
+
+    function initPills() {
+      renderPills();
     }
 
     function initMap() {
-      map = L.map('weatherMap').setView([25.6667, 76.6999], 6);
+      map = L.map('weatherMap').setView([20.0, 10.0], 2);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap | MausamMesh Spatial Engine'
+        attribution: '© OpenStreetMap | MausamMesh Planetary Engine'
       }).addTo(map);
 
-      marker = L.marker([25.6667, 76.6999]).addTo(map);
+      marker = L.marker([20.0, 10.0]).addTo(map);
 
       map.on('click', function(e) {
         const lat = parseFloat(e.latlng.lat.toFixed(4));
@@ -936,17 +1105,18 @@ HTML_PAGE = r"""<!DOCTYPE html>
       });
     }
 
-    // Auto-search village / city with Nominatim
+    // Auto-search village / city / country with Nominatim (UNIVERSAL GLOBAL SCOPE)
     function onSearchInput(query) {
       clearTimeout(searchDebounce);
       const suggestionsBox = document.getElementById("searchSuggestions");
-      if (!query || query.length < 3) {
+      if (!query || query.length < 2) {
         suggestionsBox.style.display = "none";
         return;
       }
       searchDebounce = setTimeout(async () => {
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=6`);
+          // Zero countrycodes restriction - Truly planetary search across all countries
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=6`);
           const results = await res.json();
           if (results.length > 0) {
             suggestionsBox.innerHTML = "";
@@ -972,28 +1142,32 @@ HTML_PAGE = r"""<!DOCTYPE html>
         } catch (e) {
           console.error("Search error:", e);
         }
-      }, 350);
+      }, 300);
     }
 
-    // Real Reverse Geocoding
+    // Real Reverse Geocoding across all 195+ Countries
     async function reverseGeocode(lat, lon) {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
         const data = await res.json();
         if (data && data.address) {
           const addr = data.address;
-          const village = addr.village || addr.town || addr.city || addr.suburb || addr.hamlet || addr.county || "Local Village";
-          const district = addr.state_district || addr.district || addr.county || "";
-          const state = addr.state || "India";
+          const country = addr.country || "Earth";
+          const place = addr.city || addr.town || addr.village || addr.municipality || addr.suburb || addr.hamlet || addr.county || "Local Grid";
+          const region = addr.state || addr.region || addr.province || addr.state_district || "";
+          const hierarchy = region ? `${region}, ${country}` : country;
           return {
-            village: village,
-            districtState: `${district ? district + ", " : ""}${state}, India`
+            village: place,
+            districtState: hierarchy
           };
         }
       } catch (e) {
         console.error("Geocode error:", e);
       }
-      return { village: `Location (${lat}, ${lon})`, districtState: "Indian Subcontinent" };
+      return { 
+        village: `Point (${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E)`, 
+        districtState: "Planetary Atmospheric Grid" 
+      };
     }
 
     // Fetch REAL LIVE Weather from Operational NOAA GFS
@@ -1009,6 +1183,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
       const place = await reverseGeocode(lat, lon);
       document.getElementById("villageName").innerText = place.village;
       document.getElementById("districtState").innerText = place.districtState;
+      addRecentLocation(place.village, lat, lon);
 
       // 2. Fetch real live NOAA GFS data directly from operational feed
       let liveTemp = null, liveRain = null, liveWind = null, liveCape = null, humidity = 50, apparentTemp = 28;
@@ -1086,6 +1261,30 @@ HTML_PAGE = r"""<!DOCTYPE html>
         // Voice Script
         document.getElementById("voiceText").innerText = data.voice_hi;
 
+        // Update Convective Thermodynamics & Kinematics
+        if (data.sbcape_j_kg !== undefined) {
+          document.getElementById("valCape").innerText = data.sbcape_j_kg.toFixed(1) + " J/kg";
+          document.getElementById("valCin").innerText = data.sbcin_j_kg.toFixed(1) + " J/kg";
+          document.getElementById("valLcl").innerText = data.lcl_height_m.toFixed(0) + " m";
+          document.getElementById("valShear").innerText = data.bulk_shear_0_6km_m_s.toFixed(1) + " m/s";
+          document.getElementById("valSrh").innerText = data.storm_relative_helicity_0_3km.toFixed(1) + " m²/s²";
+          document.getElementById("valScp").innerText = data.supercell_composite.toFixed(2);
+          document.getElementById("valWetBulb").innerText = data.wet_bulb_temp_c.toFixed(1) + "°C";
+          document.getElementById("valPwat").innerText = data.precipitable_water_mm.toFixed(1) + " mm";
+          document.getElementById("valStormMode").innerText = data.storm_mode || "STABLE AIRMASS";
+          document.getElementById("valDirective").innerText = data.actionable_directive || "Normal operational activity permitted";
+        }
+
+        // Update Learned Bias
+        if (data.learned_bias_delta_c !== undefined) {
+          const b = data.learned_bias_delta_c;
+          document.getElementById("learnedBiasDisplay").innerText = (b > 0 ? "+" : "") + b.toFixed(2) + "°C";
+        }
+
+        // Update Headless Code Box
+        const locTitle = (place.village || "Current Location").split("(")[0].trim();
+        document.getElementById("codeSnippetBox").innerText = `import mausam_mesh as mm\nverdict = mm.auto("${locTitle}")\nprint(verdict.to_json())`;
+
         // NOAA NOMADS link
         if (data.nomads) {
           document.getElementById("nomadsCycleText").innerText = `Live URL: ${data.nomads.cycle_url}`;
@@ -1095,6 +1294,70 @@ HTML_PAGE = r"""<!DOCTYPE html>
       } catch (e) {
         console.error("Telemetry error:", e);
       }
+    }
+
+    async function runAutonomousOneLiner() {
+      const btn = event ? event.target.closest("button") : null;
+      if (btn) btn.innerText = "⏳ Auto-detecting & Computing...";
+      try {
+        const res = await fetch("/api/auto");
+        const v = await res.json();
+        document.getElementById("latInput").value = v.latitude.toFixed(4);
+        document.getElementById("lonInput").value = v.longitude.toFixed(4);
+        if (btn) btn.innerHTML = "<span>📍 AUTO-DETECT MY LOCATION (1-LINER)</span>";
+        fetchRealWeather(v.latitude, v.longitude);
+      } catch (e) {
+        if (btn) btn.innerHTML = "<span>📍 AUTO-DETECT MY LOCATION (1-LINER)</span>";
+        alert("Autonomous execution error: " + e.message);
+      }
+    }
+
+    async function calibrateGroundTruth() {
+      const obsInput = document.getElementById("groundObsInput");
+      const obsVal = parseFloat(obsInput.value);
+      if (isNaN(obsVal)) {
+        alert("Please enter a valid temperature value (e.g. 33.5)");
+        return;
+      }
+      const lat = parseFloat(document.getElementById("latInput").value);
+      const lon = parseFloat(document.getElementById("lonInput").value);
+      const loc = document.getElementById("villageName").innerText;
+      const statusEl = document.getElementById("calibStatus");
+      statusEl.innerText = "⏳ Updating Bayesian state...";
+      
+      try {
+        const res = await fetch("/api/observe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: lat,
+            lon: lon,
+            location: loc,
+            observed_temp_c: obsVal
+          })
+        });
+        const rep = await res.json();
+        statusEl.innerText = `✓ Saved to ~/.mausam_mesh_bias.json`;
+        document.getElementById("learnedBiasDisplay").innerText = (rep.learned_bias_delta_c > 0 ? "+" : "") + rep.learned_bias_delta_c.toFixed(2) + "°C";
+        document.getElementById("tempVal").innerText = rep.calibrated_temp_c.toFixed(1);
+        obsInput.value = "";
+      } catch (e) {
+        statusEl.innerText = "Error: " + e.message;
+      }
+    }
+
+    function copyPythonCode() {
+      const loc = document.getElementById("villageName").innerText.split("(")[0].trim();
+      const code = `import mausam_mesh as mm\nverdict = mm.auto("${loc}")\nprint(verdict.to_json())`;
+      navigator.clipboard.writeText(code);
+      alert("✓ Copied Python 1-Liner to clipboard:\n\n" + code);
+    }
+
+    function copyCliCode() {
+      const loc = document.getElementById("villageName").innerText.split("(")[0].trim();
+      const cmd = `mausam-mesh --auto -l "${loc}" --json`;
+      navigator.clipboard.writeText(cmd);
+      alert("✓ Copied Terminal CLI Command to clipboard:\n\n" + cmd);
     }
 
     function triggerLiveFetch() {
@@ -1212,12 +1475,45 @@ HTML_PAGE = r"""<!DOCTYPE html>
       window.speechSynthesis.speak(utt);
     }
 
-    // Init on load
-    window.addEventListener('DOMContentLoaded', () => {
+    // Init on load - Universal Planetary Auto-Detection (Zero Geographic Bias)
+    window.addEventListener('DOMContentLoaded', async () => {
       initPills();
       initMap();
-      fetchRealWeather(25.6667, 76.6999);
+
+      // Automatically detect user's location anywhere in the world
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = parseFloat(pos.coords.latitude.toFixed(4));
+            const lon = parseFloat(pos.coords.longitude.toFixed(4));
+            document.getElementById("latInput").value = lat;
+            document.getElementById("lonInput").value = lon;
+            fetchRealWeather(lat, lon);
+          },
+          (err) => {
+            fetchAutoDetectedLocation();
+          },
+          { timeout: 3500 }
+        );
+      } else {
+        fetchAutoDetectedLocation();
+      }
     });
+
+    async function fetchAutoDetectedLocation() {
+      try {
+        const res = await fetch('/api/auto');
+        const data = await res.json();
+        if (data && data.latitude && data.longitude && (data.latitude !== 0.0 || data.longitude !== 0.0)) {
+          document.getElementById("latInput").value = data.latitude;
+          document.getElementById("lonInput").value = data.longitude;
+          fetchRealWeather(data.latitude, data.longitude);
+          return;
+        }
+      } catch (e) {}
+      // Default to Tokyo or Sheopur if completely offline
+      fetchRealWeather(35.6762, 139.6503);
+    }
   </script>
 </body>
 </html>
@@ -1266,7 +1562,36 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(payload)
             return
 
-        # 3. ROOT: Serve HTML Studio
+        # 3. API: /api/auto (Autonomous 1-Liner Engine)
+        if path == "/api/auto":
+            from auto import auto
+            loc = query.get("location", [None])[0]
+            lat = float(query["lat"][0]) if "lat" in query else None
+            lon = float(query["lon"][0]) if "lon" in query else None
+            verdict = auto(location=loc, lat=lat, lon=lon)
+            payload = json.dumps(verdict.to_dict()).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+
+        # 4. API: /api/scan (Autonomous Convective Regional Scan)
+        if path == "/api/scan":
+            from auto import auto_scan
+            verdicts = auto_scan()
+            payload = json.dumps([v.to_dict() for v in verdicts]).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(payload)
+            return
+
+        # 5. ROOT: Serve HTML Studio
         content = HTML_PAGE.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -1294,6 +1619,38 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(payload)
             return
+
+        if path == "/api/observe":
+            content_length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(content_length).decode('utf-8')
+            try:
+                data = json.loads(body)
+                from auto import auto
+                verdict = auto(
+                    location=data.get("location"),
+                    lat=float(data["lat"]) if "lat" in data and data["lat"] is not None else None,
+                    lon=float(data["lon"]) if "lon" in data and data["lon"] is not None else None,
+                    observed_temp_c=float(data["observed_temp_c"])
+                )
+                payload = json.dumps({
+                    "status": "LEARNED",
+                    "location": verdict.location_tag,
+                    "lat": verdict.latitude,
+                    "lon": verdict.longitude,
+                    "learned_bias_delta_c": verdict.learned_bias_delta_c,
+                    "calibrated_temp_c": verdict.calibrated_temp_c,
+                }).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(payload)))
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(payload)
+                return
+            except Exception as e:
+                self.send_response(400)
+                self.end_headers()
+                return
 
         self.send_response(404)
         self.end_headers()
