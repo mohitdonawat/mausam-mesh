@@ -22,12 +22,13 @@ Instead of drowning users in complex academic jargon, MausamMesh delivers immedi
 
 ## 🚀 Practical Superpowers
 
-1. **⚡ Sub-Millisecond Village Slicing (< 0.2 ms)**: Instant high-precision weather telemetry for ANY Indian coordinate or pincode.
-2. **🚨 NDMA Disaster Risk & Siren Protocol**: Real-time convective lightning alerts (CAPE index) and flash flood runoff discharge ($Q = \frac{C \cdot I \cdot A}{360}$) with live 800Hz acoustic siren synthesis.
-3. **🌾 Kisan Agromet Money-Saver**: Chemical stoichiometry converting NPK requirements into exact 50kg DAP & 45kg Urea bags, saving up to ₹4,500/acre by eliminating nitrogen over-application.
-4. **🗺️ Interactive Modern Web Studio**: High-tech Leaflet map, city switcher, GPS auto-detect, and live gauges running locally on ANY laptop with zero extra dependencies!
-5. **🔊 Bhashini Spoken Voice Alerts**: Natural 15-second spoken audio alerts in Hindi, English, and regional Indian languages.
-6. **🛡️ 100% Offline Blackout Defense**: Runs entirely in local memory with zero external internet required during cyclone/flood network breakdowns.
+1. **🌐 Real-Time Live NOAA NOMADS GFS Tracking**: Directly ingests active operational atmospheric runs from NOAA NCEP (`https://nomads.ncep.noaa.gov/`), reflecting live global temperatures, rainfall rates, wind velocities, and lightning CAPE across India.
+2. **📍 Automatic Village & City Geocoding**: Automatically resolves the exact Village, Town, District, and State (e.g. *Vijaypur, Sheopur, M.P.*) for any clicked map coordinate or GPS location.
+3. **📂 Government Weather Grid File Uploader**: Meteorologists and citizens can drag & drop any official government file (**GRIB2**, NetCDF, CSV, or JSON) directly into the UI to quantize and compress it by **95%** into an ultra-compact `.mmesh` container.
+4. **🚨 NDMA Disaster Risk & Siren Protocol**: Real-time convective lightning alerts (CAPE index) and flash flood runoff discharge ($Q = \frac{C \cdot I \cdot A}{360}$) with live 800Hz acoustic siren synthesis right through laptop speakers.
+5. **🌾 Kisan Agromet Money-Saver**: Calculates exact 50kg DAP & 45kg Urea bags, saving up to ₹4,500/acre by factoring in live rainfall to avoid wasted fertilizers and tubewell electricity.
+6. **🗺️ Interactive Modern Web Studio**: High-tech Leaflet map with city search auto-complete, city switcher pills, GPS auto-detect, and live gauges running locally on ANY laptop with zero extra dependencies!
+7. **🔊 Bhashini Spoken Voice Alerts**: Natural spoken audio alerts in Hindi and English generated on the fly.
 
 ---
 
