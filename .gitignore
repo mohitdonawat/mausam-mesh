@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Rust build target
+rust_core/target/
+target/
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Large atmospheric binary runtime downloads & mmap containers
+*.mmesh
+*.grib2
+*.grb2
+*.nc
+*.bin
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log

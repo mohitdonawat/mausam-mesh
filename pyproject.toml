@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mausam-mesh"
+version = "1.0.0"
+description = "Sovereign Edge Meteorological Compression, Spatial Slicing & Disaster Early-Warning Engine"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "Mr. Mohit Donawat (Founder & CEO, WildUs | MSD Innovations)", email = "mohitdonawat24@gmail.com" }
+]
+keywords = [
+    "meteorology", "weather", "grib2", "gis", "disaster-management",
+    "edge-computing", "quantization", "early-warning", "bhashini", "siren", "wildus"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: Hydrology"
+]
+
+dependencies = []
+
+[project.scripts]
+mausam-mesh = "mausam_mesh.cli:main"
+
+[project.urls]
+"Founder Portfolio" = "https://mohitdonawat.wildus.app/"
+"Flagship Platform" = "https://wildus.app"
+"Homepage" = "https://github.com/mohitdonawat/mausam-mesh"
+"Bug Tracker" = "https://github.com/mohitdonawat/mausam-mesh/issues"
+"Documentation" = "https://github.com/mohitdonawat/mausam-mesh/blob/main/README.md"
+
