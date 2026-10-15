@@ -10,7 +10,7 @@ if os.path.exists(readme_path):
 
 setup(
     name="mausam-mesh",
-    version="1.0.0",
+    version="1.0.1",
     packages=["mausam_mesh"],
     package_dir={"mausam_mesh": "."},
     author="Mr. Mohit Donawat (Founder & CEO, WildUs | MSD Innovations)",

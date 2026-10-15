@@ -63,11 +63,13 @@ def main():
     parser = argparse.ArgumentParser(
         description="MausamMesh — Sovereign Edge Meteorological Compression & Spatial Slicing Engine"
     )
-    parser.add_argument("--gui", action="store_true", help="Launch the high-tech Tkinter Desktop GUI Studio")
+    parser.add_argument("--studio", "--gui", dest="studio", action="store_true", help="Launch the high-tech Modern Web Studio in your browser")
+    parser.add_argument("--tk", action="store_true", help="Launch the legacy Tkinter desktop window")
     parser.add_argument("--cli", action="store_true", help="Run the All-India multi-location extraction benchmark")
     parser.add_argument("--about", action="store_true", help="Display author credentials and project architecture info")
     parser.add_argument("--lat", type=float, help="Latitude for instant weather slice")
     parser.add_argument("--lon", type=float, help="Longitude for instant weather slice")
+    parser.add_argument("--port", type=int, default=8989, help="Port to run Web Studio server on (default: 8989)")
     
     args = parser.parse_args()
 
@@ -91,25 +93,36 @@ def main():
         print(f"📢 Siren Protocol    : {threat.siren_protocol.get('tone', 'NORMAL')}")
         return
 
-    # If --gui or no arguments on desktop, try launching GUI, otherwise CLI
-    if args.gui or (not args.cli and len(sys.argv) == 1):
+    # If --tk explicitly requested
+    if args.tk:
         try:
             from .test_mausam_mesh_gfs_live import launch_gui
             print(BANNER)
-            print("🚀 Launching MausamMesh Desktop Studio GUI...")
+            print("🚀 Launching MausamMesh Tkinter Desktop GUI...")
             launch_gui()
             return
         except Exception as e:
             print(BANNER)
-            print(f"Notice: GUI could not be launched directly ({e}). Falling back to CLI mode.\n")
-            from .test_mausam_mesh_gfs_live import run_cli_all
-            run_cli_all()
-            return
+            print(f"Notice: Tkinter could not be launched ({e}). Falling back to Web Studio.\n")
 
-    # Default CLI mode
-    print(BANNER)
-    from .test_mausam_mesh_gfs_live import run_cli_all
-    run_cli_all()
+    # If --cli explicitly requested
+    if args.cli:
+        print(BANNER)
+        from .test_mausam_mesh_gfs_live import run_cli_all
+        run_cli_all()
+        return
+
+    # Default action: Launch the Breathtaking Modern Web Studio!
+    try:
+        from .studio import launch_studio
+        print(BANNER)
+        print("🚀 Launching MausamMesh Sovereign Meteorological Web Studio...")
+        launch_studio(port=args.port, open_browser=True)
+    except Exception as e:
+        print(BANNER)
+        print(f"Notice: Studio could not be launched directly ({e}). Falling back to CLI mode.\n")
+        from .test_mausam_mesh_gfs_live import run_cli_all
+        run_cli_all()
 
 if __name__ == "__main__":
     main()

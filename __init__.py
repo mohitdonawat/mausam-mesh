@@ -13,7 +13,7 @@ MIT License | Copyright (c) 2026 Mr. Mohit Donawat (MSD Innovations)
 =============================================================================
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Mr. Mohit Donawat (Founder & CEO, WildUs | MSD Innovations)"
 __portfolio__ = "https://mohitdonawat.wildus.app/"
 __license__ = "MIT"
@@ -32,6 +32,7 @@ from .threat_solver import ThreatSolver, evaluate_threat, calculate_urban_runoff
 from .kisan_agro import KisanAgroEngine, calculate_fertilizer_balance, calculate_pump_runtime
 from .voice_distiller import VoiceDistiller, to_kisan_voice
 from .sync_worker import MeshSyncWorker
+from .studio import launch_studio
 
 __all__ = [
     "AtmosphericQuantizer",
@@ -53,4 +54,5 @@ __all__ = [
     "VoiceDistiller",
     "to_kisan_voice",
     "MeshSyncWorker",
+    "launch_studio",
 ]

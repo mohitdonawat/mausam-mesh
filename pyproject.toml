@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mausam-mesh"
-version = "1.0.0"
+version = "1.0.1"
 description = "Sovereign Edge Meteorological Compression, Spatial Slicing & Disaster Early-Warning Engine"
 readme = "README.md"
 requires-python = ">=3.8"
