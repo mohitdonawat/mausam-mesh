@@ -17,7 +17,7 @@ import argparse
 
 BANNER = r"""
 ================================================================================
-⚡ MAUSAMMESH (मौसम मेश) — SOVEREIGN METEOROLOGICAL EDGE ENGINE v1.0.0
+⚡ MAUSAMMESH (मौसम मेश) — METEOROLOGICAL EDGE ENGINE v1.0.3
 ================================================================================
 👨‍💻 Founder & Systems Architect  : Mr. Mohit Donawat
 🏢 Organizations & Ecosystem     : Founder & CEO of WildUs (wildus.app) | MSD Innovations
