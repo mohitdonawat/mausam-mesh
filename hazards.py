@@ -2,7 +2,7 @@
 =============================================================================
 ⚡ MAUSAMMESH (मौसम मेश) — REGIONAL HAZARD & DISASTER INTELLIGENCE (`hazards`)
 =============================================================================
-Sovereign early-warning detectors customized for the unique meteorological 
+Meteorological early-warning detectors customized for the unique meteorological 
 regimes of the Indian subcontinent and global tropical zones:
 1. Himalayan & Western Ghats Cloudburst Detection Engine (Rain >= 100 mm/hr)
 2. Official IMD Tropical Cyclone Classification & Storm Surge Estimator
@@ -20,7 +20,10 @@ from typing import Dict, Any, Optional, Tuple, List
 from dataclasses import dataclass
 import numpy as np
 
-from .thermo import wet_bulb_temperature
+try:
+    from .thermo import wet_bulb_temperature
+except (ImportError, ValueError):
+    from thermo import wet_bulb_temperature
 
 
 # =============================================================================

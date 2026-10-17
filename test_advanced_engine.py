@@ -14,9 +14,28 @@ Tests:
 
 import math
 import numpy as np
-from severe import downdraft_cape, significant_tornado_parameter, hail_diagnostics, sweat_index
-from hazards import detect_cloudburst, classify_cyclone, evaluate_kalbaisakhi, evaluate_heat_stress
-from engine import MausamEngine
+try:
+    from .severe import (
+        downdraft_cape, 
+        significant_tornado_parameter, 
+        hail_diagnostics, 
+        sweat_index,
+        lightning_potential_index,
+        LightningPotentialReport,
+    )
+    from .hazards import detect_cloudburst, classify_cyclone, evaluate_kalbaisakhi, evaluate_heat_stress
+    from .engine import MausamEngine
+except (ImportError, ValueError):
+    from severe import (
+        downdraft_cape, 
+        significant_tornado_parameter, 
+        hail_diagnostics, 
+        sweat_index,
+        lightning_potential_index,
+        LightningPotentialReport,
+    )
+    from hazards import detect_cloudburst, classify_cyclone, evaluate_kalbaisakhi, evaluate_heat_stress
+    from engine import MausamEngine
 
 
 def test_severe_convective_engine():
@@ -47,6 +66,23 @@ def test_severe_convective_engine():
     print(f"Significant Tornado Parameter (STP): {stp:.2f}")
     assert stp > 3.0, f"Violent tornadic setup must yield STP > 3.0: {stp}"
     print("[PASS] Significant Tornado Parameter Solver Succeeded.")
+
+    # 3. Lightning Potential Index (LPI) & Damini Flash Rate
+    z_levels = np.array([100.0, 800.0, 1500.0, 3100.0, 4400.0, 5800.0, 7500.0, 9600.0])
+    lpi_rep = lightning_potential_index(
+        pressure_levels_hpa=p_levels,
+        temp_levels_c=t_levels,
+        dewpoint_levels_c=td_levels,
+        height_levels_m=z_levels,
+        sbcape_j_kg=2800.0,
+        precipitable_water_mm=45.0,
+        bulk_shear_0_6km_m_s=18.0,
+    )
+    print(f"LPI Index: {lpi_rep.lpi_j_kg} J/kg | Category: {lpi_rep.lightning_risk_category} | Siren: {lpi_rep.siren_trigger}")
+    assert lpi_rep.lpi_j_kg > 0.0
+    assert lpi_rep.charging_zone_depth_m > 0.0
+    assert len(lpi_rep.safety_directive) > 0
+    print("[PASS] Lightning Potential Index & Damini Siren Engine Succeeded.")
 
 
 def test_regional_hazards():
@@ -98,9 +134,13 @@ def test_master_mausam_engine():
     print(f"Max Expected Hail Size: {report.max_hail_size_mm} mm")
     print(f"Hail Hazard: {report.hail_threat}")
     print(f"Tornado Risk: {report.tornado_risk}")
+    if report.lightning:
+        print(f"Lightning Hazard: {report.lightning.lightning_risk_category} | LPI: {report.lightning.lpi_j_kg} J/kg")
     
     assert report.sbcape_j_kg > 1000.0
     assert report.peak_gust_kmh > 50.0
+    assert report.lightning is not None
+    assert report.lightning.lpi_j_kg >= 0.0
     print("[PASS] Master MausamEngine Unified Diagnostics Succeeded!")
 
 

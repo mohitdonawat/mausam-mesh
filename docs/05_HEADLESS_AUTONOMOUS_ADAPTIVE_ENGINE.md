@@ -1,7 +1,7 @@
 # ⚡ Module 05: Headless Autonomous Adaptive Meteorological Engine (`auto`)
 **Architecture Specification & Engineering Treatise**  
 **Author:** Mr. Mohit Donawat (Founder, CEO & Lead Systems Architect — WildUs & MSD Innovations)  
-**Package:** `mausam-mesh` | **Version:** `1.0.2` | **License:** MIT
+**Package:** `mausam-mesh` | **Version:** `1.1.0` | **License:** MIT
 
 ---
 
@@ -83,7 +83,7 @@ Where:
 
 ## 4. Systems Telemetry & Resource Footprint ("Kitno Me Jayega")
 
-`MausamMesh` was engineered from ground up for sovereign edge devices (Raspberry Pi, industrial ARM gateways, military drones) and cloud microservices:
+`MausamMesh` was engineered from ground up for edge devices (Raspberry Pi, industrial ARM gateways, autonomous UAVs) and cloud microservices:
 
 | Metric | Measured Value | Standard MetPy / Xarray | Improvement Factor |
 | :--- | :--- | :--- | :--- |
@@ -91,7 +91,7 @@ Where:
 | **Thermodynamic + Kinematic Latency** | **1.14 ms** | 120 - 450 ms | **100x - 400x Faster** |
 | **Zero-C GRIB2 Slicing Rate** | **12.1 $\mu$s / point** | 180 ms / point | **14,000x Faster** |
 | **Package Distribution Size** | **89.3 KB** | > 150 MB (with deps) | **1600x Smaller** |
-| **External C-Dependencies** | **0 (Zero)** | `eccodes`, `netCDF4`, `proj` | **100% Sovereign Python** |
+| **External C-Dependencies** | **0 (Zero)** | `eccodes`, `netCDF4`, `proj` | **100% Pure Python** |
 
 ---
 
@@ -152,12 +152,46 @@ curl -X POST http://localhost:8080/observe \
   -d '{"location": "Indore", "measured_temp_c": 34.5}'
 ```
 
+### 5.5 High-Level Unified Engine Facade (`MausamMeshEngine`)
+For enterprise applications requiring an all-in-one singleton facade across all 8 modules:
+
+```python
+from mausam_mesh.engine import get_engine
+
+engine = get_engine()
+
+# 1. Watershed Runoff Calculation
+runoff = engine.calculate_watershed_runoff(
+    rainfall_depth_mm=75.0,
+    curve_number=75.0,
+    catchment_area_km2=20.0
+)
+
+# 2. Satellite Convection Diagnostic
+diag = engine.diagnose_satellite_convection(
+    tir1_bt_c=t1_arr,
+    mir_bt_c=mir_arr,
+    prev_tir1_bt_c=t0_arr
+)
+
+# 3. Multi-Model Ensemble Risk & PoP
+risk = engine.evaluate_ensemble_risk(grid)
+
+# 4. GRIB2-to-.mmesh Transcoding
+transcode_res = engine.convert_grib2_to_mmesh(
+    input_grib_path="gfs.grib2",
+    output_mmesh_path="out.mmesh",
+    bbox=(8.0, 37.0, 68.0, 97.0)
+)
+```
+
 ---
 
 ## 6. Architectural Summary
 
-With Module 05, `MausamMesh` achieves complete operational sovereignty:
+With Module 05, `MausamMesh` achieves complete operational autonomy:
 1. **No GUI required**: Fully headless from CLI, Docker, Cron, or Go microservices.
 2. **No hardcoded coordinates**: Resolves dynamically via IP, environment, city name, or coordinates.
 3. **Continuous Adaptive Learning**: Automatically tracks and eliminates systematic local NWP model errors.
 4. **Sub-millisecond Performance**: 14 MB RAM and sub-microsecond point slicing.
+5. **Unified Facade Integration**: Single entrypoint `MausamMeshEngine` uniting thermodynamics, kinematics, GRIB2, quantization, severe hazards, agromet, runoff, satellite, and ensemble modules.

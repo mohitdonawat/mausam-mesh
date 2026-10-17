@@ -9,23 +9,42 @@ Bunkers motion, and storm-relative helicity against analytical solutions.
 
 import math
 import numpy as np
-from kinematics import (
-    coriolis_parameter,
-    beta_parameter,
-    spherical_gradient,
-    geostrophic_wind,
-    ageostrophic_wind,
-    divergence,
-    relative_vorticity,
-    absolute_vorticity,
-    advection,
-    bulk_shear,
-    bunkers_storm_motion,
-    storm_relative_helicity,
-    supercell_composite_parameter,
-    OMEGA,
-    R_EARTH,
-)
+try:
+    from .kinematics import (
+        coriolis_parameter,
+        beta_parameter,
+        spherical_gradient,
+        geostrophic_wind,
+        ageostrophic_wind,
+        divergence,
+        relative_vorticity,
+        absolute_vorticity,
+        advection,
+        bulk_shear,
+        bunkers_storm_motion,
+        storm_relative_helicity,
+        supercell_composite_parameter,
+        OMEGA,
+        R_EARTH,
+    )
+except (ImportError, ValueError):
+    from kinematics import (
+        coriolis_parameter,
+        beta_parameter,
+        spherical_gradient,
+        geostrophic_wind,
+        ageostrophic_wind,
+        divergence,
+        relative_vorticity,
+        absolute_vorticity,
+        advection,
+        bulk_shear,
+        bunkers_storm_motion,
+        storm_relative_helicity,
+        supercell_composite_parameter,
+        OMEGA,
+        R_EARTH,
+    )
 
 
 def test_coriolis_and_beta():

@@ -2,8 +2,8 @@
 =============================================================================
 ⚡ MAUSAMMESH (मौसम मेश) — WMO TENSOR QUANTIZATION & .mmesh ENGINE (`container`)
 =============================================================================
-Sovereign binary meteorological container (.mmesh) delivering 95%-98% bandwidth 
-reduction with ZERO physical loss under WMO-No. 8 sensor uncertainty budgets.
+High-efficiency binary meteorological container (.mmesh) delivering 50%-70% 
+payload reduction with ZERO physical loss under WMO-No. 8 sensor uncertainty budgets.
 
 Key Features:
 1. Physics-Bounded Uniform Affine Quantization (Float32 -> Uint8 / Uint16)
@@ -113,6 +113,26 @@ class MausamMeshQuantizer:
         return clipped.astype(dtype), x_min, float(x_scale)
 
     @staticmethod
+    def quantize_field(
+        data: np.ndarray,
+        var_name: str = "TMP",
+        level_hpa: float = 850.0,
+        bit_depth: int = 16,
+    ) -> Tuple[np.ndarray, Dict[str, Any]]:
+        """
+        Convenience wrapper returning quantized array along with field metadata dictionary.
+        """
+        q_arr, x_min, x_scale = MausamMeshQuantizer.quantize(data, bit_depth=bit_depth)
+        meta = {
+            "var_name": var_name,
+            "level_hpa": float(level_hpa),
+            "bit_depth": int(bit_depth),
+            "x_min": float(x_min),
+            "x_scale": float(x_scale),
+        }
+        return q_arr, meta
+
+    @staticmethod
     def dequantize(
         q_data: np.ndarray, 
         x_min: float, 
@@ -126,7 +146,7 @@ class MausamMeshQuantizer:
 
 
 # =============================================================================
-# 2. SOVEREIGN .mmesh WRITER
+# 2. WMO .mmesh BINARY CONTAINER WRITER
 # =============================================================================
 
 @dataclass
@@ -148,14 +168,50 @@ class MausamMeshWriter:
     """
     def __init__(
         self,
-        bounds: Tuple[float, float, float, float], # (lat_min, lat_max, lon_min, lon_max)
-        grid_shape: Tuple[int, int],               # (n_lat, n_lon)
-        model_id: int = 1,                         # 1=GFS, 2=ECMWF, 3=NCMRWF, 4=IMD
+        *args,
+        bounds: Optional[Any] = None,
+        grid_shape: Optional[Tuple[int, int]] = None,
+        model_id: int = 1,
         forecast_hour: int = 0,
         run_timestamp: int = 0,
+        **kwargs
     ):
-        self.lat_min, self.lat_max, self.lon_min, self.lon_max = bounds
-        self.n_lat, self.n_lon = grid_shape
+        # Polymorphic argument resolution
+        self.default_filepath: Optional[str] = None
+        resolved_bounds = bounds
+        resolved_grid = grid_shape
+
+        if len(args) > 0 and isinstance(args[0], str):
+            self.default_filepath = args[0]
+            if len(args) > 1:
+                resolved_bounds = args[1]
+            if len(args) > 2:
+                # Could be (lat_bounds, lon_bounds, grid_shape)
+                if len(args) >= 4 and isinstance(args[2], (tuple, list)):
+                    resolved_bounds = (args[1][0], args[1][1], args[2][0], args[2][1])
+                    resolved_grid = args[3]
+                else:
+                    resolved_grid = args[2]
+        elif len(args) > 0 and isinstance(args[0], (tuple, list)):
+            if len(args[0]) == 2 and len(args) >= 3 and isinstance(args[1], (tuple, list)):
+                # (lat_min, lat_max), (lon_min, lon_max), (n_lat, n_lon)
+                resolved_bounds = (args[0][0], args[0][1], args[1][0], args[1][1])
+                resolved_grid = args[2]
+            else:
+                resolved_bounds = args[0]
+                if len(args) > 1:
+                    resolved_grid = args[1]
+
+        if resolved_bounds is not None and len(resolved_bounds) == 4:
+            self.lat_min, self.lat_max, self.lon_min, self.lon_max = resolved_bounds
+        else:
+            self.lat_min, self.lat_max, self.lon_min, self.lon_max = (8.0, 37.0, 68.0, 97.0)
+
+        if resolved_grid is not None and len(resolved_grid) == 2:
+            self.n_lat, self.n_lon = resolved_grid
+        else:
+            self.n_lat, self.n_lon = (721, 1440)
+
         self.model_id = model_id
         self.forecast_hour = forecast_hour
         self.run_timestamp = run_timestamp
@@ -182,7 +238,7 @@ class MausamMeshWriter:
             var_name=var_name.upper(),
             var_code=var_code,
             level_type=level_type,
-            level_val=level_val,
+            level_val=int(level_val),
             dtype_code=dtype_code,
             x_min=x_min,
             x_scale=x_scale,
@@ -191,11 +247,45 @@ class MausamMeshWriter:
         )
         self._fields.append(rec)
 
-    def write(self, filepath: str, compression: str = "zlib") -> int:
+    def add_quantized_field(
+        self,
+        var_name: str,
+        level_val: int,
+        q_data: np.ndarray,
+        meta: Optional[Dict[str, Any]] = None,
+        level_type: int = LEVEL_ISOBARIC,
+    ) -> None:
+        """
+        Buffers an already-quantized integer array and metadata for writing.
+        """
+        var_code = VAR_CODE_MAP.get(var_name.upper(), 99)
+        x_min = float(meta.get("x_min", 0.0)) if meta else 0.0
+        x_scale = float(meta.get("x_scale", 1.0)) if meta else 1.0
+        bit_depth = int(meta.get("bit_depth", 16)) if meta else (8 if q_data.dtype == np.uint8 else 16)
+        dtype_code = DTYPE_UINT8 if bit_depth == 8 else DTYPE_UINT16
+        raw_bytes = q_data.tobytes()
+
+        rec = _FieldRecord(
+            var_name=var_name.upper(),
+            var_code=var_code,
+            level_type=level_type,
+            level_val=int(level_val),
+            dtype_code=dtype_code,
+            x_min=x_min,
+            x_scale=x_scale,
+            raw_bytes=raw_bytes,
+            uncompressed_len=len(raw_bytes),
+        )
+        self._fields.append(rec)
+
+    def write(self, filepath: Optional[str] = None, compression: str = "zlib") -> int:
         """
         Serializes the complete `.mmesh` binary file to disk.
         Returns total bytes written.
         """
+        target_path = filepath or self.default_filepath
+        if not target_path:
+            raise ValueError("MausamMeshWriter.write requires a target filepath (e.g. writer.write('output.mmesh')).")
         compress_code = COMPRESSION_ZLIB if compression.lower() == "zlib" else COMPRESSION_NONE
         n_vars = len(self._fields)
         toc_length = n_vars * TOC_ENTRY_SIZE
@@ -284,7 +374,7 @@ class MausamMeshWriter:
             current_offset += c_len
 
         # Write to disk
-        with open(filepath, "wb") as f:
+        with open(target_path, "wb") as f:
             f.write(header)
             for toc in toc_entries:
                 f.write(toc)
@@ -295,7 +385,7 @@ class MausamMeshWriter:
 
 
 # =============================================================================
-# 3. SOVEREIGN .mmesh READER & GPU BUFFER STREAMER
+# 3. WMO .mmesh READER & GPU BUFFER STREAMER
 # =============================================================================
 
 @dataclass

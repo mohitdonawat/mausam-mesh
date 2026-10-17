@@ -1,19 +1,19 @@
 """
 =============================================================================
-⚡ MAUSAMMESH (मौसम मेश) — THE SOVEREIGN METEOROLOGICAL EDGE ENGINE
+⚡ MAUSAMMESH (मौसम मेश) — METEOROLOGICAL EDGE ENGINE
 =============================================================================
 Open-Source Global Python/Edge Library for:
-1. 95% Atmospheric Matrix Quantization (Float32 -> Int8 Mesh)
+1. WMO-No. 8 Atmospheric Tensor Quantization (50%-70% Payload Reduction)
 2. O(1) Bilinear Coordinate Point Slicing in < 0.2ms
 3. Convective Instability & Rational Flood Runoff (Q = CIA/360)
 4. Kisan Agromet Stoichiometric NPK & FAO-56 Tubewell Pump Math
-5. Multilingual 22-Language Spoken Voice Distillation (Bhashini-Aligned)
+5. Multilingual Spoken Voice Distillation (Regional Directives)
 =============================================================================
 MIT License | Copyright (c) 2026 Mr. Mohit Donawat (MSD Innovations)
 =============================================================================
 """
 
-__version__ = "1.0.3"
+__version__ = "1.2.0"
 __author__ = "Mr. Mohit Donawat (Founder & CEO, WildUs | MSD Innovations)"
 __portfolio__ = "https://mohitdonawat.wildus.app/"
 __license__ = "MIT"
@@ -28,8 +28,15 @@ from .quantizer import (
     dequantize_precipitation_extreme,
 )
 from .spatial_slicer import SpatialSlicer, slice_point, bilinear_interpolate
-from .threat_solver import ThreatSolver, evaluate_threat, calculate_urban_runoff
-from .kisan_agro import KisanAgroEngine, calculate_fertilizer_balance, calculate_pump_runtime
+from .threat_solver import (
+    ThreatSolver, 
+    ThreatEvaluationResult, 
+    evaluate_threat, 
+    calculate_urban_runoff,
+    calculate_scs_curve_number_runoff,
+    SCSCurveNumberReport,
+)
+from .kisan_agro import KisanAgroEngine, calculate_fertilizer_balance, calculate_pump_runtime, calculate_et0_hargreaves
 from .voice_distiller import VoiceDistiller, to_kisan_voice
 from .sync_worker import MeshSyncWorker
 from .studio import launch_studio
@@ -40,7 +47,69 @@ from . import kinematics
 from . import grib
 from . import container
 from . import auto as auto_engine
+from . import severe
+from . import hazards
+from . import radar
+from . import engine
+from . import imd
+from . import satellite
+from . import transcoder
+from . import ensemble
+from .satellite import (
+    INSATSatelliteEngine,
+    diagnose_satellite_convection,
+    ConvectiveCloudGrowthReport,
+    radiance_to_brightness_temp,
+    imsra_satellite_rain_rate,
+    IMD_SATELLITE_CATALOG,
+)
+from .transcoder import (
+    convert_grib2_to_mmesh,
+    crop_grid_to_bbox,
+)
+from .ensemble import (
+    EnsembleForecastGrid,
+    EnsemblePointSummary,
+    evaluate_ensemble_risk,
+    IMD_RAINFALL_THRESHOLDS,
+)
+from .imd import (
+    IMDIngestionEngine,
+    fetch_imd_nowcast,
+    fetch_imd_national_summary,
+    IMD_CATEGORIES,
+    IMD_DWR_STATIONS,
+)
+from .engine import MausamEngine, MasterAtmosphericReport
+from .severe import (
+    downdraft_cape,
+    significant_tornado_parameter,
+    hail_diagnostics,
+    sweat_index,
+    lightning_potential_index,
+    LightningPotentialReport,
+    evaluate_severe_diagnostics,
+    SevereStormDiagnostics,
+)
+from .hazards import (
+    detect_cloudburst,
+    CloudburstAssessment,
+    classify_cyclone,
+    CycloneClassification,
+    evaluate_kalbaisakhi,
+    KalbaisakhiAlert,
+    evaluate_heat_stress,
+    HeatwaveHumanStress,
+)
+from .radar import (
+    classify_hydrometeor,
+    HydrometeorReport,
+    vad_wind_profile,
+    HYDROMETEOR_TYPES,
+)
 from .grib import MausamMeshGribDataset, Grib2Message
+from .grib_streamer import MultiFileGribCatalog, GribBatchStreamer, INDIA_BBOX
+from .grib_downloader import GribBulkDownloader, download_latest_operational_gfs
 from .container import MausamMeshQuantizer, MausamMeshWriter, MausamMeshReader
 from .auto import (
     auto, 
@@ -107,11 +176,13 @@ __all__ = [
     "slice_point",
     "bilinear_interpolate",
     "ThreatSolver",
+    "ThreatEvaluationResult",
     "evaluate_threat",
     "calculate_urban_runoff",
     "KisanAgroEngine",
     "calculate_fertilizer_balance",
     "calculate_pump_runtime",
+    "calculate_et0_hargreaves",
     "VoiceDistiller",
     "to_kisan_voice",
     "MeshSyncWorker",
@@ -161,6 +232,11 @@ __all__ = [
     "grib",
     "MausamMeshGribDataset",
     "Grib2Message",
+    "MultiFileGribCatalog",
+    "GribBatchStreamer",
+    "INDIA_BBOX",
+    "GribBulkDownloader",
+    "download_latest_operational_gfs",
     "container",
     "MausamMeshQuantizer",
     "MausamMeshWriter",
@@ -168,7 +244,58 @@ __all__ = [
     "auto",
     "auto_scan",
     "auto_detect_location",
+    "resolve_location",
+    "OFFLINE_GAZETTEER",
     "serve",
     "AutonomousAtmosphericVerdict",
     "AdaptiveAtmosphericLearner",
+    "severe",
+    "hazards",
+    "radar",
+    "engine",
+    "MausamEngine",
+    "MasterAtmosphericReport",
+    "downdraft_cape",
+    "significant_tornado_parameter",
+    "hail_diagnostics",
+    "sweat_index",
+    "lightning_potential_index",
+    "LightningPotentialReport",
+    "evaluate_severe_diagnostics",
+    "SevereStormDiagnostics",
+    "detect_cloudburst",
+    "CloudburstAssessment",
+    "classify_cyclone",
+    "CycloneClassification",
+    "evaluate_kalbaisakhi",
+    "KalbaisakhiAlert",
+    "evaluate_heat_stress",
+    "HeatwaveHumanStress",
+    "classify_hydrometeor",
+    "HydrometeorReport",
+    "vad_wind_profile",
+    "HYDROMETEOR_TYPES",
+    "imd",
+    "IMDIngestionEngine",
+    "fetch_imd_nowcast",
+    "fetch_imd_national_summary",
+    "IMD_CATEGORIES",
+    "IMD_DWR_STATIONS",
+    "calculate_scs_curve_number_runoff",
+    "SCSCurveNumberReport",
+    "satellite",
+    "INSATSatelliteEngine",
+    "diagnose_satellite_convection",
+    "ConvectiveCloudGrowthReport",
+    "radiance_to_brightness_temp",
+    "imsra_satellite_rain_rate",
+    "IMD_SATELLITE_CATALOG",
+    "transcoder",
+    "convert_grib2_to_mmesh",
+    "crop_grid_to_bbox",
+    "ensemble",
+    "EnsembleForecastGrid",
+    "EnsemblePointSummary",
+    "evaluate_ensemble_risk",
+    "IMD_RAINFALL_THRESHOLDS",
 ]

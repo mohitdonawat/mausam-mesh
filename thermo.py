@@ -643,35 +643,37 @@ def analyze_sounding(
     
     # 4. Integrate Parcel Ascent along Dry Adiabat up to LCL, Moist Adiabat above LCL
     parcel_tv = np.zeros_like(p)
+    parcel_t_c = np.zeros_like(p)
     
     # Surface equivalent potential temperature (conserved under pseudo-adiabatic ascent)
     theta_e_parcel = equivalent_potential_temperature(p_sfc, t_sfc, td_sfc)
+    theta_dry = potential_temperature(p_sfc, t_sfc)
+    w_parcel = mixing_ratio(p_sfc, vapor_pressure_from_dewpoint(td_sfc))
+    q_dry = w_parcel / (1.0 + w_parcel)
     
+    t_prev_moist = t_lcl_c
     for i in range(len(p)):
         p_curr = p[i]
         if p_curr >= p_lcl:
             # Below LCL: Dry adiabatic ascent (conserves potential temperature theta)
-            theta_dry = potential_temperature(p_sfc, t_sfc)
-            t_parcel_c = temperature_from_potential_temperature(theta_dry, p_curr)
-            w_parcel = mixing_ratio(p_sfc, vapor_pressure_from_dewpoint(td_sfc))
-            q_parcel = w_parcel / (1.0 + w_parcel)
-            parcel_tv[i] = virtual_temperature(t_parcel_c, q_parcel)
+            t_pc = temperature_from_potential_temperature(theta_dry, p_curr)
+            parcel_t_c[i] = t_pc
+            parcel_tv[i] = virtual_temperature(t_pc, q_dry)
         else:
             # Above LCL: Moist pseudo-adiabatic ascent
-            # Solve T where theta_e(P_curr, T, T) == theta_e_parcel
-            # Analytical inversion using Romps (2017) / iterative Newton solver (3 iterations max)
-            t_guess = t_lcl_c - 0.006 * (p_lcl - p_curr) * 10.0  # Initial guess
-            for _ in range(4):
+            # Warm-start Newton solver using moist lapse rate from previous level
+            t_guess = t_prev_moist - 0.055 * (p[i - 1] - p_curr)
+            for _ in range(2):
                 th_e_guess = equivalent_potential_temperature(p_curr, t_guess, t_guess)
-                # Numerical derivative step
                 d_th = equivalent_potential_temperature(p_curr, t_guess + 0.5, t_guess + 0.5) - th_e_guess
                 step = (th_e_guess - theta_e_parcel) / max(d_th / 0.5, 1e-4)
-                t_guess -= np.clip(step, -10.0, 10.0)
+                t_guess -= np.clip(step, -8.0, 8.0)
             
-            t_parcel_c = t_guess
-            ws_parcel = saturation_mixing_ratio(p_curr, t_parcel_c)
+            t_prev_moist = t_guess
+            parcel_t_c[i] = t_guess
+            ws_parcel = saturation_mixing_ratio(p_curr, t_guess)
             q_parcel = ws_parcel / (1.0 + ws_parcel)
-            parcel_tv[i] = virtual_temperature(t_parcel_c, q_parcel)
+            parcel_tv[i] = virtual_temperature(t_guess, q_parcel)
             
     # 5. Compute Buoyancy: B = g * (Tv_parcel - Tv_env) / Tv_env
     # Hydrostatic integration: dW = -Rd * (Tv_parcel - Tv_env) * d(ln P)
@@ -710,10 +712,11 @@ def analyze_sounding(
         mean_b = 0.5 * (b1 + b2)
         work = R_D * mean_b * d_ln_p
         
-        # Partition into CAPE (positive work above LFC) and CIN (negative work below LFC)
+        # Partition into CAPE (positive work between LFC and EL) and CIN (negative work below LFC)
         if mean_b > 0:
             if lfc_p is not None and p1 <= lfc_p:
-                cape += work
+                if el_p is None or p2 >= el_p:
+                    cape += work
         else:
             if lfc_p is not None and p1 >= lfc_p:
                 cin += abs(work)
@@ -733,8 +736,8 @@ def analyze_sounding(
     ki = float(k_index(t850, t500, td850, t700, td700))
     tt = float(total_totals_index(t850, t500, td850))
     
-    # Lifted Index at 500 hPa
-    t_parcel_500 = interpolate_level(500.0, parcel_tv) - T_ZERO
+    # Lifted Index at 500 hPa using true physical parcel temperature
+    t_parcel_500 = interpolate_level(500.0, parcel_t_c)
     li = float(lifted_index(t500, t_parcel_500))
     
     # Total Column Precipitable Water

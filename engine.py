@@ -2,7 +2,7 @@
 =============================================================================
 ⚡ MAUSAMMESH (मौसम मेश) — MASTER METEOROLOGICAL ENGINE (`engine`)
 =============================================================================
-Unified Sovereign Meteorological & Hazard Intelligence Engine.
+Unified Meteorological & Hazard Intelligence Engine.
 Connects Thermodynamics, Spherical Kinematics, Native GRIB2 Bitstream,
 WMO Quantization, and Regional Early-Warning Intelligence
 into a single cohesive, high-performance Python API.
@@ -19,40 +19,104 @@ from dataclasses import dataclass
 import numpy as np
 
 # Core submodules
-from .thermo import (
-    analyze_sounding, 
-    SoundingAnalysis, 
-    wet_bulb_temperature,
-    saturation_vapor_pressure,
-)
-from .kinematics import (
-    bulk_shear, 
-    bunkers_storm_motion, 
-    storm_relative_helicity, 
-    supercell_composite_parameter,
-)
-from .severe import (
-    evaluate_severe_diagnostics,
-    SevereStormDiagnostics,
-    downdraft_cape,
-    significant_tornado_parameter,
-    hail_diagnostics,
-)
-from .hazards import (
-    detect_cloudburst,
-    CloudburstAssessment,
-    classify_cyclone,
-    CycloneClassification,
-    evaluate_kalbaisakhi,
-    KalbaisakhiAlert,
-    evaluate_heat_stress,
-    HeatwaveHumanStress,
-from .grib import MausamMeshGribDataset
-from .container import (
-    MausamMeshQuantizer,
-    MausamMeshWriter,
-    MausamMeshReader,
-)
+try:
+    from .thermo import (
+        analyze_sounding, 
+        SoundingAnalysis, 
+        wet_bulb_temperature,
+        saturation_vapor_pressure,
+    )
+    from .kinematics import (
+        bulk_shear, 
+        bunkers_storm_motion, 
+        storm_relative_helicity, 
+        supercell_composite_parameter,
+    )
+    from .severe import (
+        evaluate_severe_diagnostics,
+        SevereStormDiagnostics,
+        downdraft_cape,
+        significant_tornado_parameter,
+        hail_diagnostics,
+        lightning_potential_index,
+        LightningPotentialReport,
+    )
+    from .hazards import (
+        detect_cloudburst,
+        CloudburstAssessment,
+        classify_cyclone,
+        CycloneClassification,
+        evaluate_kalbaisakhi,
+        KalbaisakhiAlert,
+        evaluate_heat_stress,
+        HeatwaveHumanStress,
+    )
+    from .radar import (
+        classify_hydrometeor,
+        HydrometeorReport,
+        vad_wind_profile,
+        HYDROMETEOR_TYPES,
+    )
+    from .threat_solver import ThreatSolver, ThreatEvaluationResult, calculate_scs_curve_number_runoff, SCSCurveNumberReport
+    from .satellite import diagnose_satellite_convection, ConvectiveCloudGrowthReport
+    from .ensemble import evaluate_ensemble_risk, EnsemblePointSummary, EnsembleForecastGrid
+    from .transcoder import convert_grib2_to_mmesh
+    from .kisan_agro import KisanAgroEngine
+    from .grib import MausamMeshGribDataset
+    from .container import (
+        MausamMeshQuantizer,
+        MausamMeshWriter,
+        MausamMeshReader,
+    )
+except (ImportError, ValueError):
+    from thermo import (
+        analyze_sounding, 
+        SoundingAnalysis, 
+        wet_bulb_temperature,
+        saturation_vapor_pressure,
+    )
+    from kinematics import (
+        bulk_shear, 
+        bunkers_storm_motion, 
+        storm_relative_helicity, 
+        supercell_composite_parameter,
+    )
+    from severe import (
+        evaluate_severe_diagnostics,
+        SevereStormDiagnostics,
+        downdraft_cape,
+        significant_tornado_parameter,
+        hail_diagnostics,
+        lightning_potential_index,
+        LightningPotentialReport,
+    )
+    from hazards import (
+        detect_cloudburst,
+        CloudburstAssessment,
+        classify_cyclone,
+        CycloneClassification,
+        evaluate_kalbaisakhi,
+        KalbaisakhiAlert,
+        evaluate_heat_stress,
+        HeatwaveHumanStress,
+    )
+    from radar import (
+        classify_hydrometeor,
+        HydrometeorReport,
+        vad_wind_profile,
+        HYDROMETEOR_TYPES,
+    )
+    from threat_solver import ThreatSolver, ThreatEvaluationResult, calculate_scs_curve_number_runoff, SCSCurveNumberReport
+    from satellite import diagnose_satellite_convection, ConvectiveCloudGrowthReport
+    from ensemble import evaluate_ensemble_risk, EnsemblePointSummary, EnsembleForecastGrid
+    from transcoder import convert_grib2_to_mmesh
+    from kisan_agro import KisanAgroEngine
+    from grib import MausamMeshGribDataset
+    from container import (
+        MausamMeshQuantizer,
+        MausamMeshWriter,
+        MausamMeshReader,
+    )
 
 
 @dataclass
@@ -76,14 +140,15 @@ class MasterAtmosphericReport:
     precipitable_water_mm: float
     k_index_c: float
     total_totals_c: float
+    lightning: Optional[LightningPotentialReport] = None
 
 
 class MausamEngine:
     """
     Master High-Level Meteorological & Disaster Intelligence Engine.
     """
-    def __init__(self, sovereign_mode: bool = True):
-        self.sovereign_mode = sovereign_mode
+    def __init__(self, standalone_mode: bool = True):
+        self.standalone_mode = standalone_mode
 
     # =========================================================================
     # 1. SOUNDING & SEVERE WEATHER DIAGNOSTICS
@@ -106,6 +171,14 @@ class MausamEngine:
         td = np.asarray(dewpoint_levels_c, dtype=np.float64)
         u = np.asarray(u_wind_m_s, dtype=np.float64)
         v = np.asarray(v_wind_m_s, dtype=np.float64)
+
+        # Sort descending from surface (high P) to top of atmosphere (low P)
+        sort_idx = np.argsort(-p)
+        p = p[sort_idx]
+        t = t[sort_idx]
+        td = td[sort_idx]
+        u = u[sort_idx]
+        v = v[sort_idx]
         
         # Approximate heights via hypsometric equation if not supplied
         if height_levels_m is None:
@@ -114,10 +187,10 @@ class MausamEngine:
             for i in range(len(p) - 1):
                 p1, p2 = p[i], p[i + 1]
                 t_mean = 0.5 * (t[i] + t[i + 1]) + 273.15
-                dz = (287.058 * t_mean / 9.80665) * math.log(p1 / p2)
+                dz = (287.058 * t_mean / 9.80665) * math.log(max(1e-3, p1 / max(1e-3, p2)))
                 z[i + 1] = z[i] + dz
         else:
-            z = np.asarray(height_levels_m, dtype=np.float64)
+            z = np.asarray(height_levels_m, dtype=np.float64)[sort_idx]
 
         # 1. Core Thermodynamics
         thermo_res = analyze_sounding(p, t, td, z)
@@ -164,11 +237,35 @@ class MausamEngine:
             precipitable_water_mm=float(round(thermo_res.precipitable_water_mm, 1)),
             k_index_c=float(round(thermo_res.k_index_c, 1)),
             total_totals_c=float(round(thermo_res.total_totals_c, 1)),
+            lightning=sev.lightning,
         )
 
     # =========================================================================
     # 2. REGIONAL EARLY-WARNING CONVENIENCE FACADES
     # =========================================================================
+    def check_lightning(
+        self,
+        pressure_levels_hpa: np.ndarray,
+        temp_levels_c: np.ndarray,
+        dewpoint_levels_c: np.ndarray,
+        height_levels_m: np.ndarray,
+        sbcape_j_kg: float,
+        precipitable_water_mm: float = 35.0,
+        bulk_shear_0_6km_m_s: float = 12.0,
+    ) -> LightningPotentialReport:
+        """
+        Direct Damini lightning siren and LPI charge separation assessment.
+        """
+        return lightning_potential_index(
+            pressure_levels_hpa=pressure_levels_hpa,
+            temp_levels_c=temp_levels_c,
+            dewpoint_levels_c=dewpoint_levels_c,
+            height_levels_m=height_levels_m,
+            sbcape_j_kg=sbcape_j_kg,
+            precipitable_water_mm=precipitable_water_mm,
+            bulk_shear_0_6km_m_s=bulk_shear_0_6km_m_s,
+        )
+
     def check_cloudburst(
         self,
         rainfall_rate_mm_hr: float,
@@ -203,12 +300,104 @@ class MausamEngine:
         return evaluate_kalbaisakhi(dewpoint_c, rh_700_pct, cape_j_kg, shear_0_6km_m_s)
 
     # =========================================================================
-    # 3. GRIB2 & .mmesh EDGE FILE UTILITIES
+    # 3. DOPPLER RADAR & HYDROMETEOR INTELLIGENCE
+    # =========================================================================
+    def analyze_radar_echo(
+        self,
+        zh_dbz: float,
+        zdr_db: float,
+        rho_hv: float,
+        kdp_deg_km: float = 0.0,
+        temp_c: float = 15.0,
+    ) -> HydrometeorReport:
+        """Classifies polarimetric radar volume into physical hydrometeor types."""
+        return classify_hydrometeor(zh_dbz, zdr_db, rho_hv, kdp_deg_km, temp_c)
+
+    def vad_wind(
+        self,
+        radial_velocities_m_s: np.ndarray,
+        azimuths_deg: np.ndarray,
+        elevation_deg: float,
+        slant_range_m: float,
+    ) -> Tuple[float, float, float, float]:
+        """Calculates VAD horizontal wind profile from Doppler radial velocities."""
+        return vad_wind_profile(radial_velocities_m_s, azimuths_deg, elevation_deg, slant_range_m)
+
+    # =========================================================================
+    # 4. KISAN AGROMET & DISASTER THREAT EVALUATION
+    # =========================================================================
+    def evaluate_threat(self, **kwargs) -> ThreatEvaluationResult:
+        """Evaluates multivariate atmospheric and hydrological flood threat."""
+        return ThreatSolver.evaluate_threat(**kwargs)
+
+    def calculate_fertilizer(self, **kwargs) -> Dict[str, Any]:
+        """Calculates stoichiometric NPK to commercial fertilizer bags."""
+        return KisanAgroEngine.calculate_fertilizer_balance(**kwargs)
+
+    def calculate_irrigation_pump(self, **kwargs) -> Dict[str, Any]:
+        """Calculates FAO-56 crop water evapotranspiration and pump runtime."""
+        return KisanAgroEngine.calculate_pump_runtime(**kwargs)
+
+    # =========================================================================
+    # 5. GRIB2 & .mmesh EDGE FILE UTILITIES
     # =========================================================================
     def open_grib(self, filepath: str) -> MausamMeshGribDataset:
         """Opens GRIB2 file using zero-C memory-mapped parser."""
         return MausamMeshGribDataset(filepath)
 
     def open_mmesh(self, filepath: str) -> MausamMeshReader:
-        """Opens sovereign .mmesh container."""
+        """Opens WMO .mmesh container."""
         return MausamMeshReader(filepath)
+
+    def transcode_grib2_to_mmesh(
+        self,
+        grib_filepath: str,
+        output_mmesh_path: str,
+        variables: Optional[List[str]] = None,
+        bit_depth: int = 16,
+    ) -> Dict[str, Any]:
+        """Transcodes large raw GRIB2 file to ultra-compact quantized .mmesh file."""
+        return convert_grib2_to_mmesh(
+            grib_filepath=grib_filepath,
+            output_mmesh_path=output_mmesh_path,
+            variables=variables,
+            bit_depth=bit_depth,
+        )
+
+    # =========================================================================
+    # 6. SATELLITE, HYDROLOGICAL & ENSEMBLE ADVANCED ENGINES
+    # =========================================================================
+    def evaluate_watershed_runoff(
+        self,
+        rainfall_depth_mm: float,
+        catchment_area_ha: float,
+        hydrologic_soil_group: str = "C",
+        land_use: str = "mixed_agricultural",
+        antecedent_rainfall_5day_mm: float = 25.0,
+    ) -> SCSCurveNumberReport:
+        """Calculates rural watershed direct runoff depth and peak discharge via SCS-CN method."""
+        return calculate_scs_curve_number_runoff(
+            rainfall_depth_mm=rainfall_depth_mm,
+            catchment_area_ha=catchment_area_ha,
+            hydrologic_soil_group=hydrologic_soil_group,
+            land_use=land_use,
+            antecedent_rainfall_5day_mm=antecedent_rainfall_5day_mm,
+        )
+
+    def check_satellite_convection(
+        self,
+        tb_t1_c: float,
+        tb_t2_c: float,
+        time_delta_min: float = 15.0,
+    ) -> ConvectiveCloudGrowthReport:
+        """Detects explosive cumulonimbus updrafts and overshooting tops from INSAT satellite frames."""
+        return diagnose_satellite_convection(tb_t1_c, tb_t2_c, time_delta_min=time_delta_min)
+
+    def evaluate_ensemble_risk(
+        self,
+        member_forecasts: List[float],
+        variable_name: str = "APCP",
+    ) -> EnsemblePointSummary:
+        """Computes probabilistic spread, PoP, and IMD warning thresholds across ensemble members."""
+        return evaluate_ensemble_risk(member_forecasts, variable_name=variable_name)
+

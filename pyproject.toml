@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mausam-mesh"
-version = "1.0.3"
-description = "Sovereign Edge Meteorological Compression, Spatial Slicing & Disaster Early-Warning Engine"
+version = "1.2.0"
+description = "Edge Meteorological Computing, WMO Tensor Quantization & Convective Early-Warning Engine"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
@@ -32,7 +32,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Hydrology"
 ]
 
-dependencies = []
+dependencies = [
+    "numpy>=1.20.0",
+]
 
 [project.scripts]
 mausam-mesh = "mausam_mesh.cli:main"

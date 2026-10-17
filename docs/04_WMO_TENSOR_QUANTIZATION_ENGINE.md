@@ -1,10 +1,10 @@
 # ⚡ MausamMesh — Scientific Architecture Specification
-## Module 04: WMO Tensor Quantization & Sovereign `.mmesh` Container Specification (`mausam_mesh.container`)
+## Module 04: WMO Tensor Quantization & Binary `.mmesh` Container Specification (`mausam_mesh.container`)
 
 **Architect & Author**: Mr. Mohit Donawat (Founder & CEO, WildUs | MSD Innovations)  
 **Repository**: [github.com/mohitdonawat/mausam-mesh](https://github.com/mohitdonawat/mausam-mesh)  
 **Status**: APPROVED SCIENTIFIC SPECIFICATION  
-**Target Benchmark**: 95% Bandwidth Reduction vs NetCDF/GRIB2, 0 Physical Information Loss under WMO-No. 8 Standards, Direct 60 FPS WebGL/GPU Ingestion.
+**Target Benchmark**: 50%–70% Payload Reduction vs Raw Float32, 0 Physical Information Loss under WMO-No. 8 Standards, Direct 60 FPS WebGL/GPU Ingestion.
 
 ---
 
@@ -20,15 +20,15 @@ A single operational run of global GFS at $0.25^\circ$ resolution contains over 
    $$T = 301.8472910394\text{ K}$$
    contains 15 decimal digits of precision. However, according to the **World Meteorological Organization (WMO Guide to Meteorological Instruments and Methods of Observation, WMO-No. 8)**, high-precision platinum resistance thermometers (PT100) and radiosonde sensors have a physical measurement uncertainty of:
    $$\sigma_T \approx \pm 0.05^\circ\text{C} \text{ to } \pm 0.1^\circ\text{C}$$
-   The remaining 10+ decimal digits represent purely random numerical truncation noise and non-physical entropy. Transmitting this noise wastes **$75\%\text{ to }87.5\%$ of network bandwidth and disk storage**.
-2. **The Disaster Zone & Sovereign Edge Bottleneck**:
+   The remaining 10+ decimal digits represent purely random numerical truncation noise and non-physical entropy. Transmitting this noise wastes **$50\%\text{ to }75\%$ of network bandwidth and disk storage**.
+2. **The Disaster Zone & Edge Telemetry Bottleneck**:
    In disaster management scenarios (cyclones in Odisha, flash floods in Himachal Pradesh, cloudbursts in Uttarakhand), field rescue teams, emergency command centers, mobile apps (**WildUs, YansMap, Bharat Disaster App**), and low-power IoT mesh nodes operate over degraded 2G/3G cellular networks or intermittent satellite links ($< 256\text{ kbps}$). A $50\text{ MB}$ GRIB2 file or $250\text{ MB}$ NetCDF file takes minutes or hours to transfer—rendering early warnings fatally delayed.
 3. **The Web & Mobile Rendering Wall**:
    Browsers and mobile GPUs cannot directly bind NetCDF or GRIB2 files to texture memory. They require complex, CPU-intensive server-side Python rasterization or client-side JavaScript decoding loops that freeze the UI thread and consume gigabytes of device RAM.
 
 ### The MausamMesh Breakthrough:
 * **Physics-Constrained WMO Quantization**: By mapping continuous IEEE-754 floating-point tensors into discrete integer lattices bounded strictly by WMO sensor uncertainty tolerances ($\epsilon \le \sigma_{\text{WMO}}$), MausamMesh reduces tensor bit depth from 32/64 bits down to 8 or 16 bits with **zero loss of physical meaning**.
-* **The Sovereign `.mmesh` Binary Container**: A lightweight, cache-aligned, zero-C-dependency binary container with a fixed 64-byte header and a direct Table of Contents (TOC).
+* **The WMO-Bounded `.mmesh` Binary Container**: A lightweight, cache-aligned, zero-C-dependency binary container with a fixed 64-byte header and a direct Table of Contents (TOC).
 * **Direct WebGL / WebGPU Texture Buffer Binding**: The `.mmesh` payload is pre-formatted as contiguous byte arrays ready for direct zero-copy upload into GPU `gl.R8UI` or `gl.R16UI` textures, enabling real-time wind particle tracing and thermodynamic contouring at **60 FPS on any smartphone**.
 
 ---
@@ -86,14 +86,14 @@ $$\text{SQNR} = 10 \log_{10}\left( \frac{\sigma_X^2}{\sigma_e^2} \right) \approx
 
 ---
 
-## 4. 📦 The Sovereign `.mmesh` Container Specification
+## 4. 📦 The WMO-Bounded `.mmesh` Container Specification
 
 The `.mmesh` format is a unified, endian-explicit, self-describing binary format designed from first principles for instant zero-copy operating system mapping (`mmap`) and direct WebGL/GPU buffer streaming.
 
 ### 4.1 Binary Structure Overview
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                   SOVEREIGN .mmesh BINARY ARCHITECTURE                 │
+│                      WMO .mmesh BINARY ARCHITECTURE                    │
 ├────────────────────────────────────────────────────────────────────────┤
 │ 1. PRIMARY FIXED HEADER (64 Bytes, Cache-Aligned)                      │
 │    - Magic Signature ("MMESH\x01\x00\x00") [8B]                        │
@@ -284,12 +284,39 @@ class MausamMeshReader:
         ...
 ```
 
+### 7.1 Automated GRIB2-to-`.mmesh` Transcoding Pipeline (`mausam_mesh.transcoder`)
+
+To bridge global supercomputer forecasts directly into edge deployment, `mausam_mesh` provides an automated zero-C transcoding engine:
+
+```python
+from mausam_mesh import convert_grib2_to_mmesh, crop_grid_to_bbox
+
+# Transcode 1.8 GB GFS operational file to regional Indian Subcontinent .mmesh
+result = convert_grib2_to_mmesh(
+    input_grib_path="gfs.t00z.pgrb2.0p25.f000",
+    output_mmesh_path="india_cyclone_alert.mmesh",
+    bbox=(8.0, 37.0, 68.0, 97.0),  # Lat 8N-37N, Lon 68E-97E
+    variables=["TMP", "UGRD", "VGRD", "APCP", "CAPE"],
+    bit_depth=16
+)
+
+print(f"Compressed {result['input_size_bytes'] / 1e6:.1f} MB GRIB2 into "
+      f"{result['output_size_bytes'] / 1e3:.1f} KB .mmesh container "
+      f"({result['compression_ratio']*100:.1f}% reduction)!")
+```
+
+**Workflow Anatomy:**
+1. **Streaming Header Extraction**: Scans Sections 0-4 without unpacking raw payload points.
+2. **Bounding Box Slicing**: Extracts row/column slice windows matching $(\phi_{\min}, \phi_{\max}, \lambda_{\min}, \lambda_{\max})$.
+3. **Affine Integer Quantization**: Converts float32 subgrids into uint16/uint8 arrays strictly obeying WMO-No. 8 tolerances.
+4. **Binary Container Serialization**: Writes fixed 64-byte container headers and direct memory-mappable binary blocks.
+
 ---
 
-## 8. 🏆 Summary of Sovereign Capabilities
+## 8. 🏆 Summary of Container Capabilities
 
 By completing Module 04:
-1. **Sovereign Independence**: India and global edge deployments are completely freed from bloated, fragile Western dependencies (`eccodes`, heavy NetCDF C-libraries).
-2. **Extreme Compression with Zero Physical Loss**: 100% compliant with WMO-No. 8 sensor uncertainty budgets, cutting file payloads by **$95\%\text{ to }98\%$**.
-3. **Disaster Readiness**: Live nationwide forecasts can now be downloaded in **sub-second latency over 3G/satellite connections** by village authorities, disaster relief forces (NDRF), and mobile users of **WildUs, YansMap, and Bharat Disaster App**.
+1. **Universal Portability**: Edge deployments are completely freed from heavy, fragile compile-time dependencies (`eccodes`, heavy NetCDF C-libraries).
+2. **High-Efficiency Quantization with Zero Physical Loss**: 100% compliant with WMO-No. 8 sensor uncertainty budgets, cutting file payloads by **$50\%\text{ to }70\%$**.
+3. **Disaster Readiness**: Live regional forecasts can now be downloaded in **sub-second latency over 3G/satellite connections** by village authorities, disaster relief forces (NDRF), and mobile users of **WildUs, YansMap, and Bharat Disaster App**.
 4. **Instant 60 FPS GPU Visuals**: Direct buffer compatibility with WebGL and WebGPU unlocks smooth desktop-class meteorological visualizations directly inside mobile web browsers.

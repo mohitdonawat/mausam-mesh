@@ -69,6 +69,15 @@ class AtmosphericQuantizer:
             val_range = 1.0
         scale = (bins - 1) / val_range
 
+        try:
+            import numpy as np
+            arr = np.asarray(values, dtype=np.float32)
+            clamped = np.clip(arr, min_val, max_val)
+            q_arr = np.clip(np.round((clamped - min_val) * scale), 0, bins - 1).astype(np.uint8)
+            return q_arr.tobytes()
+        except Exception:
+            pass
+
         byte_arr = bytearray(len(values))
         for idx, val in enumerate(values):
             clamped = max(min_val, min(max_val, val))
@@ -90,6 +99,14 @@ class AtmosphericQuantizer:
         """
         val_range = max_val - min_val
         inv_scale = val_range / (bins - 1)
+
+        try:
+            import numpy as np
+            arr = np.frombuffer(byte_data, dtype=np.uint8)
+            vals = np.round(min_val + (arr.astype(np.float32) * inv_scale), 2)
+            return vals.tolist()
+        except Exception:
+            pass
 
         result = []
         for b in byte_data:
@@ -118,6 +135,17 @@ class AtmosphericQuantizer:
         log_denom = math.log(1.0 + mu)
         scale = (bins - 1)
 
+        try:
+            import numpy as np
+            arr = np.asarray(values, dtype=np.float32)
+            clamped = np.clip(arr, min_val, max_val)
+            norm = (clamped - min_val) / val_range
+            companded = np.log(1.0 + mu * norm) / log_denom
+            q = np.clip(np.round(companded * scale), 0, bins - 1).astype(np.uint8)
+            return q.tobytes()
+        except Exception:
+            pass
+
         byte_arr = bytearray(len(values))
         for idx, val in enumerate(values):
             clamped = max(min_val, min(max_val, val))
@@ -144,6 +172,16 @@ class AtmosphericQuantizer:
         val_range = max_val - min_val
         scale = bins - 1
         one_plus_mu = 1.0 + mu
+
+        try:
+            import numpy as np
+            arr = np.frombuffer(byte_data, dtype=np.uint8).astype(np.float32)
+            y = arr / scale
+            norm = (np.power(one_plus_mu, y) - 1.0) / mu
+            vals = np.round(min_val + norm * val_range, 2)
+            return vals.tolist()
+        except Exception:
+            pass
 
         result = []
         for b in byte_data:

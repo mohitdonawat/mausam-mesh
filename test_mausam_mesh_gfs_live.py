@@ -21,10 +21,16 @@ from typing import Dict, Any, Tuple
 # Ensure mausam_mesh is in path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from spatial_slicer import SpatialSlicer, PointWeather
-from quantizer import AtmosphericQuantizer
-from kisan_agro import KisanAgroEngine
-from threat_solver import ThreatSolver
+try:
+    from .spatial_slicer import SpatialSlicer, PointWeather
+    from .quantizer import AtmosphericQuantizer
+    from .kisan_agro import KisanAgroEngine
+    from .threat_solver import ThreatSolver
+except (ImportError, ValueError):
+    from spatial_slicer import SpatialSlicer, PointWeather
+    from quantizer import AtmosphericQuantizer
+    from kisan_agro import KisanAgroEngine
+    from threat_solver import ThreatSolver
 
 # Standard National Reference Catalog (Major Climatic Corridors of India)
 INDIA_LOCATIONS = {
@@ -113,6 +119,7 @@ def create_india_gfs_grid(rows: int = 116, cols: int = 116, lat_min: float = 8.0
 
 
 def compute_slice_details(lat: float, lon: float, size_gb: float = 100.0, crop: str = "wheat"):
+    t_start = time.perf_counter()
     rows = 116
     cols = 116
     lat_min, lat_max = 8.0, 37.0
@@ -144,9 +151,10 @@ def compute_slice_details(lat: float, lon: float, size_gb: float = 100.0, crop: 
     w21 = dr * (1.0 - dc)
     w22 = dr * dc
 
-    t_start = time.perf_counter()
-    interpolated_temp = (w11 * q11) + (w12 * q12) + (w21 * q21) + (w22 * q22)
-    interpolated_temp = round(interpolated_temp, 2)
+    # Real operational point slicing via SpatialSlicer
+    pt_wx = SpatialSlicer.slice_point(lat, lon)
+    interpolated_temp = pt_wx.temperature_c
+    rain_rate = pt_wx.rain_mm_hr
     calc_time_us = (time.perf_counter() - t_start) * 1_000_000
 
     # Byte offset calculation in size_gb file
@@ -154,19 +162,17 @@ def compute_slice_details(lat: float, lon: float, size_gb: float = 100.0, crop: 
     cell_fraction = ((r0 * cols) + c0) / (rows * cols)
     byte_offset = int(total_bytes * cell_fraction)
 
-    # Agromet decisions
+    # Agromet decisions from real rainfall
     agro_res = KisanAgroEngine.calculate_fertilizer_balance(crop=crop, acres=2.0)
-    pump_res = KisanAgroEngine.calculate_pump_runtime(crop=crop, acres=2.0, pump_hp=5.0, rainfall_mm=0.0)
+    pump_res = KisanAgroEngine.calculate_pump_runtime(crop=crop, acres=2.0, pump_hp=5.0, rainfall_mm=pt_wx.rain_mm_hr)
 
-    # Severe threat check
-    is_heavy_rain_zone = (lon > 90.0 and lat < 26.5)
-    rain_rate = 92.0 if is_heavy_rain_zone else 0.0
-    cape = 2500.0 if is_heavy_rain_zone else 800.0
+    # Severe threat check from real atmospheric sounding
     threat = ThreatSolver.evaluate_threat(
-        rain_intensity_mm_hr=rain_rate,
-        wind_speed_kmh=48.0 if is_heavy_rain_zone else 16.0,
+        rain_intensity_mm_hr=pt_wx.rain_mm_hr,
+        wind_speed_kmh=pt_wx.wind_speed_kmh,
         temp_c=interpolated_temp,
-        cape_index=cape,
+        lat=lat,
+        lon=lon,
         catchment_area_ha=40.0
     )
 

@@ -210,9 +210,29 @@ class MausamMeshDataset:
     def to_mmesh_container(self, output_path: str, bounds_india_only: bool = True):
         """
         Quantizes and exports the dataset into an ultra-compact .mmesh container,
-        reducing file size by 95% with WMO-bounded sensor precision.
+        reducing payload size by 50%–70% with WMO-bounded sensor precision.
         """
 ```
+
+---
+
+## 4.1 📦 Multi-Template Bitstream Architecture (WMO Templates 5.0, 5.2, 5.3, 5.40)
+
+Operational GRIB2 files from NOAA NOMADS, ECMWF, and IMD utilize varying data representation schemes in Section 5:
+
+1. **Template 5.0 (Grid point data — Simple Packing)**:
+   - Direct $N_{\text{bits}}$ uniform packing per grid point.
+   - Decoded using analytical $O(1)$ zero-copy seeking via `_extract_raw_token()`.
+2. **Template 5.2 (Grid point data — Complex Packing)**:
+   - Divides the horizontal raster into $NG$ variable-width and variable-length groups.
+   - Decoded with native `BitReader` across arbitrary non-byte-aligned bit boundaries.
+3. **Template 5.3 (Complex Packing with Spatial Differencing)**:
+   - Computes 1st order ($d_i = x_i - x_{i-1}$) or 2nd order ($d_i = x_i - 2x_{i-1} + x_{i-2}$) spatial derivatives before group packing.
+   - MausamMesh reconstructs original fields by integrating differences with overall minimum offsets.
+4. **Template 5.40 (Grid point data — JPEG 2000 Code Stream Compression)**:
+   - Highly compressed wavelet representation common in NOAA HRRR, GFS, and MRMS feeds.
+   - Decompressed via native Pillow/openjpeg with automatic NumPy array caching for instant subsequent $O(1)$ coordinate queries.
+
 
 ---
 

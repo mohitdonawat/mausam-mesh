@@ -10,12 +10,12 @@ if os.path.exists(readme_path):
 
 setup(
     name="mausam-mesh",
-    version="1.0.3",
+    version="1.2.0",
     packages=["mausam_mesh"],
     package_dir={"mausam_mesh": "."},
     author="Mr. Mohit Donawat (Founder & CEO, WildUs | MSD Innovations)",
     author_email="mohitdonawat24@gmail.com",
-    description="Sovereign Edge Meteorological Compression, Spatial Slicing & Disaster Early-Warning Engine",
+    description="Edge Meteorological Computing, WMO Tensor Quantization & Convective Early-Warning Engine",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://mohitdonawat.wildus.app/",
@@ -37,6 +37,9 @@ setup(
     ],
     keywords="meteorology weather grib2 gis edge-computing quantization early-warning bhashini wildus",
     python_requires=">=3.8",
+    install_requires=[
+        "numpy>=1.20.0",
+    ],
     entry_points={
         "console_scripts": [
             "mausam-mesh=mausam_mesh.cli:main",

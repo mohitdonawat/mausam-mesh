@@ -17,7 +17,7 @@ import argparse
 
 BANNER = r"""
 ================================================================================
-⚡ MAUSAMMESH (मौसम मेश) — METEOROLOGICAL EDGE ENGINE v1.0.3
+⚡ MAUSAMMESH (मौसम मेश) — METEOROLOGICAL EDGE ENGINE v1.2.0
 ================================================================================
 👨‍💻 Founder & Systems Architect  : Mr. Mohit Donawat
 🏢 Organizations & Ecosystem     : Founder & CEO of WildUs (wildus.app) | MSD Innovations
@@ -32,7 +32,7 @@ def print_about():
     print(BANNER)
     print("""
 MausamMesh was conceptualized, architected, and engineered single-handedly by
-Mr. Mohit Donawat as the sovereign edge meteorological compression and spatial
+Mr. Mohit Donawat as the edge meteorological compression and spatial
 slicing engine for national disaster resilience.
 
 Founder Profile & Key Ecosystem Platforms:
@@ -61,7 +61,7 @@ Connect with Mr. Mohit Donawat:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="MausamMesh — Sovereign Edge Meteorological Compression & Spatial Slicing Engine"
+        description="MausamMesh — Edge Meteorological Computing & Spatial Slicing Engine"
     )
     parser.add_argument("--auto", action="store_true", help="Execute the one-line autonomous adaptive pipeline (zero GUI)")
     parser.add_argument("--json", action="store_true", help="Output results in pure headless JSON format (for microservices/Docker)")
@@ -77,11 +77,43 @@ def main():
     parser.add_argument("--lat", type=float, default=None, help="Optional Latitude (auto-detected via IP/environment if omitted)")
     parser.add_argument("--lon", type=float, default=None, help="Optional Longitude (auto-detected via IP/environment if omitted)")
     parser.add_argument("--port", type=int, default=8989, help="Port to run Web Studio or Microservice server on")
+    parser.add_argument("--download-grib", action="store_true", help="Download live real GRIB2 files from NOAA NOMADS / IMD")
+    parser.add_argument("--grib-dest", type=str, default="grib_data", help="Directory to save downloaded GRIB2 files")
+    parser.add_argument("--full-globe", action="store_true", help="Download full uncropped planetary GRIB files (default is India crop)")
+    parser.add_argument("--imd", action="store_true", help="Fetch live All-India IMD National Warning summary from official WFS GeoServer")
+    parser.add_argument("--imd-district", type=str, default=None, help="Fetch official IMD Nowcast warning for specific district (e.g. 'Mumbai', 'Delhi', 'Shimla')")
+    parser.add_argument("--imd-radars", action="store_true", help="List all official operational IMD Doppler Weather Radar stations")
+    parser.add_argument("--satellite", action="store_true", help="List operational INSAT-3D/3DR geostationary satellite channels and live product links")
+    parser.add_argument("--ensemble", action="store_true", help="Run multi-model ensemble spread & Probability of Precipitation (PoP) assessment")
+    parser.add_argument("--lpi", action="store_true", help="Evaluate Lightning Potential Index (LPI) & Damini siren trigger")
+    parser.add_argument("--runoff", action="store_true", help="Evaluate USDA / CWC SCS Curve Number watershed runoff & discharge")
+    parser.add_argument("--transcode", type=str, default=None, help="Transcode raw GRIB2 file to compressed .mmesh file")
+    parser.add_argument("--mmesh-out", type=str, default=None, help="Output path for transcoded .mmesh file (defaults to input.mmesh)")
     
     args = parser.parse_args()
 
     if args.about:
         print_about()
+        return
+
+    # Legacy Tkinter Desktop GUI
+    if args.tk:
+        try:
+            from .test_mausam_mesh_gfs_live import launch_gui
+        except (ImportError, ValueError):
+            from test_mausam_mesh_gfs_live import launch_gui
+        launch_gui()
+        return
+
+    # Modern Web Studio Browser GUI
+    if args.studio:
+        try:
+            from .studio import launch_studio
+        except (ImportError, ValueError):
+            from studio import launch_studio
+        print(BANNER)
+        print("🚀 Launching MausamMesh Meteorological Web Studio...")
+        launch_studio(port=args.port, open_browser=True)
         return
 
     # Headless Zero-Dependency HTTP Microservice Server
@@ -127,6 +159,176 @@ def main():
         worker.run_daemon(interval_seconds=10800)
         return
 
+    # Real GRIB2 Telemetry Bulk Downloader
+    if args.download_grib:
+        try:
+            from .grib_downloader import download_latest_operational_gfs
+        except (ImportError, ValueError):
+            from grib_downloader import download_latest_operational_gfs
+        print(BANNER)
+        print(f"🛰️ Ingesting real WMO GRIB2 telemetry files into '{args.grib_dest}'...")
+        download_latest_operational_gfs(
+            dest_dir=args.grib_dest,
+            india_crop=not args.full_globe
+        )
+        return
+
+    # IMD Live National Warning Summary
+    if args.imd:
+        try:
+            from .imd import fetch_imd_national_summary
+        except (ImportError, ValueError):
+            from imd import fetch_imd_national_summary
+        print(BANNER)
+        summary = fetch_imd_national_summary()
+        print("🇮🇳 INDIA METEOROLOGICAL DEPARTMENT (IMD) — SOVEREIGN NATIONAL SUMMARY")
+        print(f" Total Districts Tracked : {summary['total_districts_tracked']}")
+        print(f" Active Warning Districts: {summary['active_warning_districts']}")
+        print(f" Data Source             : {summary['data_source']}")
+        print(f" Pipeline Status         : {summary['status']}")
+        return
+
+    # IMD District-Wise Nowcast
+    if args.imd_district:
+        try:
+            from .imd import fetch_imd_nowcast
+        except (ImportError, ValueError):
+            from imd import fetch_imd_nowcast
+        print(BANNER)
+        nowcast = fetch_imd_nowcast(args.imd_district)
+        print(f"🇮🇳 IMD OFFICIAL NOWCAST: {nowcast['district']}")
+        print(f" Date / Time of Issue : {nowcast.get('date')} {nowcast.get('time_of_issue', '')} | Valid Upto: {nowcast.get('valid_upto')} hrs")
+        print(f" Severity Level       : {nowcast.get('severity_level')} (Color Code: {nowcast.get('color_code')})")
+        print(f" Siren Trigger        : {'🚨 YES (CRITICAL HAZARD)' if nowcast.get('siren_trigger') else '🟢 NO (SAFE)'}")
+        print(f" Max Rain Rate        : {nowcast.get('max_rain_rate_mm_hr', 0.0)} mm/hr")
+        print(f" Active Categories    :")
+        for c in nowcast.get('active_categories', []):
+            print(f"   • [{c.get('code')}] {c.get('en')} / {c.get('hi')}")
+        if nowcast.get('custom_message'):
+            print(f" IMD Special Note     : {nowcast.get('custom_message')}")
+        return
+
+    # IMD Radar Stations Network
+    if args.imd_radars:
+        try:
+            from .imd import IMDIngestionEngine
+        except (ImportError, ValueError):
+            from imd import IMDIngestionEngine
+        print(BANNER)
+        print("🛰️ IMD OPERATIONAL DOPPLER WEATHER RADAR (DWR) NETWORK:")
+        print(f"{'CODE':<6} {'STATION NAME':<28} {'BAND':<8} {'RANGE':<10} {'COORDINATES'}")
+        print("-" * 75)
+        for r in IMDIngestionEngine.get_radar_network():
+            print(f"{r['code']:<6} {r['name']:<28} {r['band']:<8} {r['range_km']} km    ({r['lat']:.2f}N, {r['lon']:.2f}E)")
+        return
+
+    # INSAT Geostationary Satellite Ingestion
+    if args.satellite:
+        try:
+            from .satellite import INSAT_CHANNELS, IMD_SATELLITE_CATALOG
+        except (ImportError, ValueError):
+            from satellite import INSAT_CHANNELS, IMD_SATELLITE_CATALOG
+        print(BANNER)
+        print("🛰️ ISRO / IMD INSAT-3D & INSAT-3DR GEOSTATIONARY SATELLITE ENGINE:")
+        print(f"{'CHANNEL':<8} {'WAVELENGTH':<16} {'RESOLUTION':<16} {'SPECTRUM / APPLICATION'}")
+        print("-" * 75)
+        for ch, meta in INSAT_CHANNELS.items():
+            print(f"{ch:<8} {meta['wavelength_um']} µm{'':<10} {meta['resolution_km']} km{'':<11} Wavenumber: {meta['wavenumber_cm']} cm⁻¹")
+        print("\n📡 OFFICIAL IMD SATELLITE SECTOR ENDPOINTS:")
+        for name, url in IMD_SATELLITE_CATALOG.items():
+            print(f"  • {name:<26}: {url}")
+        return
+
+    # Multi-Model Ensemble Spread & PoP Evaluation
+    if args.ensemble:
+        try:
+            from .ensemble import evaluate_ensemble_risk
+        except (ImportError, ValueError):
+            from ensemble import evaluate_ensemble_risk
+        print(BANNER)
+        # Sample 11-member ensemble representing IMD NEPS
+        sample_members = [15.0, 28.0, 82.0, 95.0, 110.0, 20.0, 72.0, 68.0, 45.0, 8.0, 135.0]
+        ens = evaluate_ensemble_risk(sample_members, variable_name="APCP")
+        print(f"⚡ MULTI-MEMBER ENSEMBLE SPREAD SYNTHESIS ({ens.member_count} Members):")
+        print(f"  • Expected Rainfall Mean  : {ens.mean_val} mm (Spread σ: ±{ens.spread_std} mm)")
+        print(f"  • Member Min / Max Range   : {ens.min_val} mm to {ens.max_val} mm")
+        print(f"  • P10 / Median / P90       : {ens.p10} mm / {ens.median_p50} mm / {ens.p90} mm")
+        print(f"  • PoP (>= 2.5mm Light)     : {ens.pop_light_pct}%")
+        print(f"  • PoP (>= 64.5mm Heavy)    : {ens.pop_heavy_pct}% (IMD Yellow Alert Threshold)")
+        print(f"  • PoP (>= 115.6mm V.Heavy) : {ens.pop_very_heavy_pct}% (IMD Orange Alert Threshold)")
+        print(f"  • Model Confidence Score   : {ens.forecast_confidence_pct}%")
+        print(f"  • Warning Verdict          : {ens.imd_alert_level}")
+        print(f"  • Action Directive         : {ens.risk_directive}")
+        return
+
+    # Lightning Potential Index (LPI) & Damini Siren Evaluation
+    if args.lpi:
+        try:
+            from .severe import lightning_potential_index
+            from .auto import auto
+        except (ImportError, ValueError):
+            from severe import lightning_potential_index
+            from auto import auto
+        print(BANNER)
+        v = auto(location=args.location, lat=args.lat, lon=args.lon)
+        lpi_res = lightning_potential_index(
+            sbcape_j_kg=v.sbcape_j_kg,
+            pwat_mm=v.precipitable_water_mm,
+            bulk_shear_0_6km_m_s=v.bulk_shear_0_6km_m_s,
+        )
+        print(f"⚡ LIGHTNING POTENTIAL INDEX (LPI) & DAMINI SIREN: {v.location_tag}")
+        print(f"  • LPI Diagnostic Score     : {lpi_res.lpi_j_kg:.2f} J/kg")
+        print(f"  • Flash Density Rate       : {lpi_res.flash_density_per_km2_hr:.2f} flashes/km²/hr")
+        print(f"  • Updraft Vertical Speed   : {lpi_res.updraft_speed_w_m_s:.2f} m/s")
+        print(f"  • Damini Warning Level     : {lpi_res.damini_warning_level}")
+        print(f"  • 800Hz Siren Activation   : {'🚨 TRIGGERED (CRITICAL THREAT)' if lpi_res.siren_triggered else '🟢 SAFE'}")
+        print(f"  • Safety Directive         : {lpi_res.directive}")
+        return
+
+    # USDA / CWC SCS Curve Number Watershed Runoff
+    if args.runoff:
+        try:
+            from .threat_solver import calculate_scs_curve_number_runoff
+            from .auto import auto
+        except (ImportError, ValueError):
+            from threat_solver import calculate_scs_curve_number_runoff
+            from auto import auto
+        print(BANNER)
+        v = auto(location=args.location, lat=args.lat, lon=args.lon)
+        rain_val = max(15.0, v.rain_rate_mm_hr * 3.0)
+        q_res = calculate_scs_curve_number_runoff(
+            rainfall_depth_mm=rain_val,
+            curve_number=78.0,
+            catchment_area_km2=10.0,
+            storm_duration_hr=3.0,
+        )
+        print(f"🌊 CWC / USDA WATERSHED SCS-CN RUNOFF EVALUATION: {v.location_tag}")
+        print(f"  • Rainfall Storm Depth (P) : {q_res.rainfall_depth_p_mm:.1f} mm (Duration: {q_res.storm_duration_hr:.1f} hr)")
+        print(f"  • Soil Potential Storage(S): {q_res.retention_s_mm:.1f} mm (CN: {q_res.curve_number:.0f}, {q_res.antecedent_moisture_condition})")
+        print(f"  • Initial Abstraction (Ia) : {q_res.initial_abstraction_ia_mm:.1f} mm")
+        print(f"  • Direct Runoff Depth (Pe) : {q_res.runoff_depth_pe_mm:.2f} mm")
+        print(f"  • Total Runoff Volume      : {q_res.runoff_volume_m3:,.0f} m³")
+        print(f"  • Peak Flood Discharge (Qp): {q_res.peak_discharge_m3_s:.2f} m³/s")
+        print(f"  • CWC Inundation Hazard    : {q_res.hazard_level}")
+        return
+
+    # GRIB2 to .mmesh Transcoder
+    if args.transcode:
+        try:
+            from .transcoder import convert_grib2_to_mmesh
+        except (ImportError, ValueError):
+            from transcoder import convert_grib2_to_mmesh
+        print(BANNER)
+        src_path = args.transcode
+        out_path = args.mmesh_out or (os.path.splitext(src_path)[0] + ".mmesh")
+        print(f"🔄 Transcoding WMO GRIB2 '{src_path}' -> '{out_path}'...")
+        res = convert_grib2_to_mmesh(src_path, out_path)
+        print(f"[SUCCESS] Transcoded {res['layers_transcoded']} layers!")
+        print(f"  • Original GRIB2 : {res['original_grib_bytes'] / (1024*1024):.2f} MB")
+        print(f"  • Quantized .mmesh: {res['mmesh_bytes'] / (1024*1024):.2f} MB")
+        print(f"  • Payload Saving : {res['payload_reduction_pct']}% reduction")
+        return
+
     # Headless One-Line Autonomous Pipeline (Zero-input auto-detection or Custom Location)
     if args.auto or args.json or args.observe_temp is not None or args.location is not None:
         try:
@@ -146,6 +348,9 @@ def main():
             print(f" Calibrated Temp : {verdict.calibrated_temp_c:.2f} C (Learned Bias: {verdict.learned_bias_delta_c:+0.2f} C)")
             print(f" Surface CAPE    : {verdict.sbcape_j_kg:.1f} J/kg | CIN: {verdict.sbcin_j_kg:.1f} J/kg")
             print(f" 0-6km Wind Shear: {verdict.bulk_shear_0_6km_m_s:.1f} m/s | 0-3km Helicity: {verdict.storm_relative_helicity_0_3km:.1f} m^2/s^2")
+            print(f" Damini Siren    : {'🚨 TRIGGERED (CRITICAL LIGHTNING THREAT)' if verdict.damini_siren_active else '🟢 SAFE'} (LPI: {verdict.lightning_potential_index:.2f} J/kg, Flash Density: {verdict.lightning_flash_density_per_km2_hr:.2f}/km²/h)")
+            print(f" Watershed Runoff: Pe: {verdict.watershed_runoff_depth_pe_mm:.2f} mm | Total Volume: {verdict.watershed_runoff_volume_m3:,.0f} m³")
+            print(f" IMD Nowcast     : [{verdict.imd_severity_level}] {verdict.imd_active_category}")
             print(f" Storm Mode      : {verdict.storm_mode}")
             print(f" Alert Level     : {verdict.alert_level}")
             print(f" Action Directive: {verdict.actionable_directive}")

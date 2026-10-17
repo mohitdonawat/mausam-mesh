@@ -13,11 +13,18 @@ Validates:
 import os
 import time
 import numpy as np
-from container import (
-    MausamMeshQuantizer,
-    MausamMeshWriter,
-    MausamMeshReader,
-)
+try:
+    from .container import (
+        MausamMeshQuantizer,
+        MausamMeshWriter,
+        MausamMeshReader,
+    )
+except (ImportError, ValueError):
+    from container import (
+        MausamMeshQuantizer,
+        MausamMeshWriter,
+        MausamMeshReader,
+    )
 
 
 def test_wmo_quantization_precision():
@@ -49,12 +56,18 @@ def test_mmesh_container_lifecycle():
     n_lat, n_lon = 120, 120  # 14,400 points
     bounds = (8.0, 38.0, 68.0, 98.0) # Pan-India bounding box
     
-    # Generate realistic, spatially smooth meteorological fields
-    y_coords, x_coords = np.meshgrid(np.linspace(0, 3*np.pi, n_lat), np.linspace(0, 3*np.pi, n_lon), indexing="ij")
-    temp_850 = (285.0 + 12.0 * np.sin(y_coords) * np.cos(x_coords)).astype(np.float32)
-    wind_u = (10.0 + 8.0 * np.cos(y_coords)).astype(np.float32)
-    wind_v = (-5.0 + 6.0 * np.sin(x_coords)).astype(np.float32)
-    cape_grid = np.maximum(0.0, 1500.0 + 1200.0 * np.sin(y_coords + x_coords)).astype(np.float32)
+    # Generate physical Pan-India climatological atmospheric fields
+    lats = np.linspace(bounds[0], bounds[1], n_lat)
+    lons = np.linspace(bounds[2], bounds[3], n_lon)
+    lat_grid, lon_grid = np.meshgrid(lats, lons, indexing="ij")
+
+    # Climatological 850 hPa temperature with latitudinal lapse rate & Himalayan cooling
+    temp_850 = (301.15 - (lat_grid - 8.0) * 0.42 - np.maximum(0.0, lat_grid - 28.0) * 1.5).astype(np.float32)
+    # Monsoon low-level jet wind vectors (Southwesterly monsoon inflow)
+    wind_u = (8.5 + 4.0 * np.cos((lat_grid - 15.0) * np.pi / 20.0)).astype(np.float32)
+    wind_v = (4.0 + 3.5 * np.sin((lon_grid - 75.0) * np.pi / 20.0)).astype(np.float32)
+    # Convective Instability (CAPE) concentrated in tropical and gangetic corridors
+    cape_grid = np.maximum(100.0, 2400.0 - (lat_grid - 20.0)**2 * 3.5).astype(np.float32)
     
     raw_size_bytes = (temp_850.nbytes + wind_u.nbytes + wind_v.nbytes + cape_grid.nbytes)
     

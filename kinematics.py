@@ -503,12 +503,9 @@ def storm_relative_helicity(
     u_sr = interp_u - storm_motion_u
     v_sr = interp_v - storm_motion_v
     
-    # Layer stencil integration: sum_{k} [ (u_sr_{k+1} * v_sr_k) - (u_sr_k * v_sr_{k+1}) ]
-    srh = 0.0
-    for k in range(len(interp_z) - 1):
-        srh += (u_sr[k + 1] * v_sr[k] - u_sr[k] * v_sr[k + 1])
-        
-    return float(srh)
+    # Fully vectorized layer stencil integration (zero Python loop overhead)
+    srh = float(np.sum(u_sr[1:] * v_sr[:-1] - u_sr[:-1] * v_sr[1:]))
+    return srh
 
 
 def supercell_composite_parameter(

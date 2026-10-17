@@ -14,13 +14,22 @@ import os
 import struct
 import time
 import numpy as np
-from grib import (
-    MausamMeshGribDataset,
-    Grib2Section3Grid,
-    Grib2Section4Product,
-    Grib2Section5Rep,
-    Grib2Message,
-)
+try:
+    from .grib import (
+        MausamMeshGribDataset,
+        Grib2Section3Grid,
+        Grib2Section4Product,
+        Grib2Section5Rep,
+        Grib2Message,
+    )
+except (ImportError, ValueError):
+    from grib import (
+        MausamMeshGribDataset,
+        Grib2Section3Grid,
+        Grib2Section4Product,
+        Grib2Section5Rep,
+        Grib2Message,
+    )
 
 
 def create_synthetic_grib2_file(filepath: str, n_rows: int = 10, n_cols: int = 10):
@@ -181,5 +190,44 @@ def test_grib_engine():
                 pass
 
 
+def test_complex_and_jpeg2000_packing():
+    try:
+        from .grib import BitReader
+    except (ImportError, ValueError):
+        from grib import BitReader
+
+    # Test BitReader across arbitrary byte boundaries
+    test_buf = bytes([0b10110010, 0b11000101, 0b11110000])
+    reader = BitReader(test_buf, start_byte=0)
+    # Read 3 bits: 101 -> 5
+    b3 = reader.read_bits(3)
+    assert b3 == 0b101, f"Expected 5, got {b3}"
+    # Read 5 bits: 10010 -> 18
+    b5 = reader.read_bits(5)
+    assert b5 == 0b10010, f"Expected 18, got {b5}"
+    # Read 4 bits: 1100 -> 12
+    b4 = reader.read_bits(4)
+    assert b4 == 0b1100, f"Expected 12, got {b4}"
+    # Read 8 bits across byte boundary: 0101 1111 -> 0x5F (95)
+    b8 = reader.read_bits(8)
+    assert b8 == 0b01011111, f"Expected 95, got {b8}"
+    print("[PASS] BitReader arbitrary-width bit-slicing verified.")
+
+    # Test Grib2Section5Rep dataclass template support
+    rep_complex = Grib2Section5Rep(
+        reference_value_r=250.0,
+        binary_scale_e=0,
+        decimal_scale_d=1,
+        bits_per_value=12,
+        template_number=3,
+        extra_params={"diff_order": 2, "num_groups": 10},
+    )
+    assert rep_complex.template_number == 3
+    assert rep_complex.extra_params["diff_order"] == 2
+    print("[PASS] Grib2Section5Rep Complex & Spatial Differencing Template 5.3 verified.")
+
+
 if __name__ == "__main__":
     test_grib_engine()
+    test_complex_and_jpeg2000_packing()
+

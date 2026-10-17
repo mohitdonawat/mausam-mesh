@@ -20,19 +20,66 @@ from typing import Dict, Tuple, Optional, Union
 from dataclasses import dataclass
 import numpy as np
 
-from .thermo import (
-    R_D, G, T_ZERO,
-    saturation_vapor_pressure,
-    vapor_pressure_from_dewpoint,
-    dewpoint_from_vapor_pressure,
-    mixing_ratio,
-    specific_humidity,
-    virtual_temperature,
-    potential_temperature,
-    temperature_from_potential_temperature,
-    wet_bulb_temperature,
-    equivalent_potential_temperature,
-)
+try:
+    from .thermo import (
+        R_D, G, T_ZERO,
+        saturation_vapor_pressure,
+        vapor_pressure_from_dewpoint,
+        dewpoint_from_vapor_pressure,
+        mixing_ratio,
+        specific_humidity,
+        virtual_temperature,
+        potential_temperature,
+        temperature_from_potential_temperature,
+        wet_bulb_temperature,
+        equivalent_potential_temperature,
+    )
+except (ImportError, ValueError):
+    from thermo import (
+        R_D, G, T_ZERO,
+        saturation_vapor_pressure,
+        vapor_pressure_from_dewpoint,
+        dewpoint_from_vapor_pressure,
+        mixing_ratio,
+        specific_humidity,
+        virtual_temperature,
+        potential_temperature,
+        temperature_from_potential_temperature,
+        wet_bulb_temperature,
+        equivalent_potential_temperature,
+    )
+
+
+@dataclass
+class LightningPotentialReport:
+    """Diagnostic profile of atmospheric charge separation & lightning potential (LPI)."""
+    lpi_j_kg: float
+    lightning_risk_category: str  # LOW, MODERATE, HIGH, EXTREME
+    flash_rate_density_per_km2_hr: float
+    charging_zone_cape_j_kg: float
+    charging_zone_depth_m: float
+    siren_trigger: bool
+    safety_directive: str
+
+    @property
+    def flash_density_per_km2_hr(self) -> float:
+        return self.flash_rate_density_per_km2_hr
+
+    @property
+    def damini_warning_level(self) -> str:
+        return self.lightning_risk_category
+
+    @property
+    def siren_triggered(self) -> bool:
+        return self.siren_trigger
+
+    @property
+    def directive(self) -> str:
+        return self.safety_directive
+
+    @property
+    def updraft_speed_w_m_s(self) -> float:
+        return math.sqrt(2.0 * max(0.0, self.charging_zone_cape_j_kg))
 
 
 @dataclass
@@ -51,6 +98,7 @@ class SevereStormDiagnostics:
     hail_threat_category: str
     tornado_risk_category: str
     wind_damage_risk: str
+    lightning: Optional[LightningPotentialReport] = None
 
 
 def downdraft_cape(
@@ -112,47 +160,38 @@ def downdraft_cape(
     tv_env = virtual_temperature(t, q_env)
     
     # 2. Descend saturated pseudo-adiabatically down to surface (p[0])
-    dcape = 0.0
     descent_mask = (p >= p_orig) & (p <= p[0])
     descent_indices = np.where(descent_mask)[0]
     
     # Sort from p_orig to p_sfc (increasing pressure)
     descent_indices = descent_indices[np.argsort(p[descent_indices])]
-    
-    for k in range(len(descent_indices) - 1):
-        i1 = descent_indices[k]
-        i2 = descent_indices[k + 1]
-        p1, p2 = p[i1], p[i2]
-        
-        # Invert theta_e to parcel temperature at both levels
-        def get_tw_at_p(curr_p: float) -> float:
-            # Quick Newton solver
-            tw = tw_orig + 0.005 * (curr_p - p_orig) * 10.0
-            for _ in range(3):
-                val = equivalent_potential_temperature(curr_p, tw, tw)
-                diff = val - th_e_downdraft
-                tw -= diff / 2.5
-            return tw
-            
-        t_parcel_1 = get_tw_at_p(p1)
-        t_parcel_2 = get_tw_at_p(p2)
-        
-        q1 = specific_humidity(p1, saturation_vapor_pressure(t_parcel_1))
-        q2 = specific_humidity(p2, saturation_vapor_pressure(t_parcel_2))
-        
-        tv_parcel_1 = virtual_temperature(t_parcel_1, q1)
-        tv_parcel_2 = virtual_temperature(t_parcel_2, q2)
-        
-        # Negative buoyancy diff: parcel is colder than environment
-        b1 = tv_env[i1] - tv_parcel_1
-        b2 = tv_env[i2] - tv_parcel_2
-        
-        mean_b = 0.5 * (b1 + b2)
-        if mean_b > 0.0:
-            d_ln_p = math.log(p2 / p1)
-            dcape += R_D * mean_b * d_ln_p
-            
-    dcape = max(0.0, float(dcape))
+    n_desc = len(descent_indices)
+    if n_desc < 2:
+        return 0.0, 0.0
+
+    p_desc = p[descent_indices]
+    tv_env_desc = tv_env[descent_indices]
+
+    # Pre-solve parcel temperatures along moist adiabat with warm-started Newton solver
+    tv_parcel_arr = np.zeros(n_desc, dtype=np.float64)
+    tw_curr = tw_orig
+    for idx, curr_p in enumerate(p_desc):
+        tw = tw_curr + 0.05 * (curr_p - (p_desc[idx - 1] if idx > 0 else p_orig))
+        for _ in range(2):
+            val = equivalent_potential_temperature(curr_p, tw, tw)
+            tw -= (val - th_e_downdraft) / 2.5
+        tw_curr = tw
+        q = specific_humidity(curr_p, saturation_vapor_pressure(tw))
+        tv_parcel_arr[idx] = virtual_temperature(tw, q)
+
+    # Negative buoyancy diff: parcel is colder than environment
+    buoy_diff = tv_env_desc - tv_parcel_arr
+    mean_buoy = 0.5 * (buoy_diff[:-1] + buoy_diff[1:])
+    d_ln_p = np.log(p_desc[1:] / p_desc[:-1])
+
+    pos_mask = mean_buoy > 0.0
+    dcape = float(R_D * np.sum(mean_buoy[pos_mask] * d_ln_p[pos_mask])) if np.any(pos_mask) else 0.0
+    dcape = max(0.0, dcape)
     # Peak microburst wind gust velocity: V_gust = sqrt(2 * DCAPE)
     v_gust = math.sqrt(2.0 * dcape)
     
@@ -303,6 +342,86 @@ def sweat_index(
     return float(sweat)
 
 
+def lightning_potential_index(
+    pressure_levels_hpa: Optional[Any] = None,
+    temp_levels_c: Optional[Any] = None,
+    dewpoint_levels_c: Optional[Any] = None,
+    height_levels_m: Optional[Any] = None,
+    sbcape_j_kg: float = 0.0,
+    precipitable_water_mm: Optional[float] = None,
+    bulk_shear_0_6km_m_s: float = 12.0,
+    *,
+    pwat_mm: Optional[float] = None,
+) -> LightningPotentialReport:
+    """
+    Computes Lightning Potential Index (LPI) based on non-inductive charge separation 
+    physics in the mixed-phase charging zone (-10°C to -25°C). Aligned with Yair et al. (2010).
+    
+    In this zone, collisions between graupel and smaller ice crystals in the presence 
+    of supercooled liquid water produce massive positive and negative dipolar charge centers.
+    
+    Returns:
+        LightningPotentialReport dataclass.
+    """
+    if pwat_mm is not None and precipitable_water_mm is None:
+        precipitable_water_mm = pwat_mm
+    if precipitable_water_mm is None:
+        precipitable_water_mm = 35.0
+
+    # 1. Mixed-phase charging layer boundaries (-10°C and -25°C)
+    if height_levels_m is not None and temp_levels_c is not None:
+        z = np.asarray(height_levels_m, dtype=np.float64)
+        t = np.asarray(temp_levels_c, dtype=np.float64)
+        z_m10 = float(np.interp(-10.0, t[::-1], z[::-1])) if (np.max(t) >= -10.0 and np.min(t) <= -10.0) else 5000.0
+        z_m25 = float(np.interp(-25.0, t[::-1], z[::-1])) if (np.max(t) >= -25.0 and np.min(t) <= -25.0) else 7500.0
+        charge_depth = max(0.0, z_m25 - z_m10)
+    else:
+        charge_depth = 2500.0
+    
+    # 2. CAPE concentration in the charge separation zone
+    hgz_factor = min(0.60, max(0.12, (charge_depth / 3500.0) * 0.45))
+    cape_charge = max(0.0, sbcape_j_kg * hgz_factor)
+    w_updraft = math.sqrt(2.0 * cape_charge)
+    
+    # 3. Yair et al. LPI calculation
+    moisture_weight = min(1.6, max(0.4, precipitable_water_mm / 30.0))
+    shear_tilt = min(1.4, max(0.5, bulk_shear_0_6km_m_s / 15.0))
+    
+    lpi = 0.5 * (w_updraft ** 2) * moisture_weight * shear_tilt / 10.0
+    lpi = float(round(max(0.0, lpi), 1))
+    
+    # 4. Flash rate density estimate (flashes per km^2 per hour)
+    flash_density = float(round(0.04 * (lpi ** 1.35), 2)) if lpi > 0.5 else 0.0
+    
+    # 5. Risk Category & Safety Protocol (Damini Standard)
+    if lpi >= 35.0:
+        cat = "EXTREME (CRITICAL DAMINI RED ALERT)"
+        siren = True
+        directive = "🚨 प्राणघातक आकाशीय बिजली का भीषण खतरा! खुले खेतों से तुरंत पक्के मकान में शरण लें। ऊंचे पेड़ों, बिजली के खंभों व पानी से दूर रहें।"
+    elif lpi >= 14.0:
+        cat = "HIGH (SEVERE LIGHTNING THREAT)"
+        siren = True
+        directive = "⚠️ आकाशीय बिजली की तीव्र संभावना। किसान भाई खुले खेतों में काम तुरंत बंद करें और सुरक्षित स्थान पर जाएं।"
+    elif lpi >= 3.0:
+        cat = "MODERATE (ISOLATED CONVECTIVE STRIKES)"
+        siren = False
+        directive = "काले घने बादलों पर नज़र रखें; गर्जना सुनते ही सुरक्षित आश्रय लें।"
+    else:
+        cat = "LOW (MINIMAL LIGHTNING RISK)"
+        siren = False
+        directive = "सामान्य कृषि एवं बाहरी कार्य सुरक्षित हैं।"
+        
+    return LightningPotentialReport(
+        lpi_j_kg=lpi,
+        lightning_risk_category=cat,
+        flash_rate_density_per_km2_hr=flash_density,
+        charging_zone_cape_j_kg=float(round(cape_charge, 1)),
+        charging_zone_depth_m=float(round(charge_depth, 0)),
+        siren_trigger=siren,
+        safety_directive=directive,
+    )
+
+
 def evaluate_severe_diagnostics(
     pressure_levels_hpa: np.ndarray,
     temp_levels_c: np.ndarray,
@@ -390,8 +509,31 @@ def evaluate_severe_diagnostics(
         wind_cat = "NORMAL CONVECTIVE BREEZE"
         
     # Supercell Composite
-    from .kinematics import supercell_composite_parameter
+    try:
+        from .kinematics import supercell_composite_parameter
+    except (ImportError, ValueError):
+        from kinematics import supercell_composite_parameter
     scp = supercell_composite_parameter(sbcape_j_kg, bulk_shear_0_6km_m_s, srh_0_3km)
+
+    # 4. Lightning Potential Index (LPI) & Damini Flash Rate
+    try:
+        from .thermo import specific_humidity, vapor_pressure_from_dewpoint, precipitable_water
+    except (ImportError, ValueError):
+        from thermo import specific_humidity, vapor_pressure_from_dewpoint, precipitable_water
+
+    e_env = vapor_pressure_from_dewpoint(dewpoint_levels_c)
+    q_env = specific_humidity(pressure_levels_hpa, e_env)
+    pwat_val = precipitable_water(pressure_levels_hpa, q_env)
+
+    lpi_rep = lightning_potential_index(
+        pressure_levels_hpa=pressure_levels_hpa,
+        temp_levels_c=temp_levels_c,
+        dewpoint_levels_c=dewpoint_levels_c,
+        height_levels_m=height_levels_m,
+        sbcape_j_kg=sbcape_j_kg,
+        precipitable_water_mm=pwat_val,
+        bulk_shear_0_6km_m_s=bulk_shear_0_6km_m_s,
+    )
     
     return SevereStormDiagnostics(
         storm_mode=storm_mode,
@@ -407,4 +549,6 @@ def evaluate_severe_diagnostics(
         hail_threat_category=hail_cat,
         tornado_risk_category=tor_cat,
         wind_damage_risk=wind_cat,
+        lightning=lpi_rep,
     )
+
